@@ -12,6 +12,7 @@ const (
 	RoleAdmin
 )
 
+// errNotFound missing user in database.
 var errNotFound = fmt.Errorf("user not found")
 
 // User represents a user in our system.
@@ -94,12 +95,12 @@ func (s *Storage) GetUserRole(login string) (int, error) {
 
 func (s *Storage) ValidateUser(login string, password string) (bool, error) {
 	//TODO: need implement hash with asymmetric keys
-	exists, err := s.HasUser(login)
+	user, err := s.getUser(login)
 	if err != nil {
 		return false, fmt.Errorf("validate user: %w", err)
 	}
 
-	if !exists {
+	if user.id == -1 {
 		return false, fmt.Errorf("validate user: user not found")
 	}
 
@@ -109,19 +110,6 @@ func (s *Storage) ValidateUser(login string, password string) (bool, error) {
 	}
 
 	return password == userPwd, nil
-}
-
-func (s *Storage) HasUser(name string) (bool, error) {
-	user, err := s.getUser(name)
-	if err != nil {
-		if errors.As(err, &errNotFound) {
-			return false, nil
-		}
-
-		return false, err
-	}
-
-	return user.id != -1, nil
 }
 
 func (s *Storage) getUserPassword(login string) (string, error) {
