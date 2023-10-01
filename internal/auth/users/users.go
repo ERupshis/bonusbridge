@@ -67,6 +67,16 @@ func (s *Storage) getUser(login string) (User, error) {
 	return User{}, errNotFound
 }
 
+func (s *Storage) getUserByID(id int) (User, error) {
+	for idx, u := range s.users {
+		if id == idx {
+			return u, nil
+		}
+	}
+
+	return User{}, errNotFound
+}
+
 func (s *Storage) GetUserId(login string) (int, error) {
 	user, err := s.getUser(login)
 	if err != nil {
@@ -80,8 +90,8 @@ func (s *Storage) GetUserId(login string) (int, error) {
 	return user.id, nil
 }
 
-func (s *Storage) GetUserRole(login string) (int, error) {
-	user, err := s.getUser(login)
+func (s *Storage) GetUserRole(userID int) (int, error) {
+	user, err := s.getUserByID(userID)
 	if err != nil {
 		if errors.As(err, &errNotFound) {
 			return -1, nil

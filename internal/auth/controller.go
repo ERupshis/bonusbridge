@@ -2,44 +2,43 @@ package auth
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users"
-	"github.com/erupshis/bonusbridge/internal/controllers"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/go-chi/chi/v5"
 )
 
-type controller struct {
+const packageName = "auth"
+
+type Controller struct {
 	usersStrg users.Storage
 	jwt       jwtgenerator.JwtGenerator
 
 	log logger.BaseLogger
 }
 
-func CreateAuthenticator(usersStorage users.Storage, jwt jwtgenerator.JwtGenerator, baseLogger logger.BaseLogger) controllers.BaseController {
-	return &controller{
+func CreateAuthenticator(usersStorage users.Storage, jwt jwtgenerator.JwtGenerator, baseLogger logger.BaseLogger) *Controller {
+	return &Controller{
 		usersStrg: usersStorage,
 		jwt:       jwt,
 		log:       baseLogger,
 	}
 }
 
-func (c *controller) Route() *chi.Mux {
+func (c *Controller) Route() *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Post("/register", c.registerHandler)
-
-	r.Get("/login", c.loginHandlerForm)
 	r.Post("/login", c.loginHandler)
 
 	return r
 }
 
-func (c *controller) registerHandler(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) registerHandler(w http.ResponseWriter, r *http.Request) {
 	buf := bytes.Buffer{}
 	if _, err := buf.ReadFrom(r.Body); err != nil {
 		c.log.Info("[controller:registerHandler] failed to read request body: %v", err)
@@ -88,7 +87,7 @@ func (c *controller) registerHandler(w http.ResponseWriter, r *http.Request) {
 	c.log.Info("[controller:registerHandler] user '%s' registered successfully", user.Login)
 }
 
-func (c *controller) loginHandler(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 	buf := bytes.Buffer{}
 	if _, err := buf.ReadFrom(r.Body); err != nil {
 		c.log.Info("[controller:loginHandler] failed to read request body: %v", err)
@@ -143,77 +142,42 @@ func (c *controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 	c.log.Info("[controller:registerHandler] user '%s' authenticated successfully", user.Login)
 }
 
-func (c *controller) loginHandlerForm(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprintf(w, `
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<title>Login</title>
-		</head>
-		<body>
-			<h1>Login</h1>
-			<form id="login-form">
-				<label for="username">Username:</label>
-				<input type="text" id="username" name="username" required><br>
-				<label for="password">Password:</label>
-				<input type="password" id="password" name="password" required><br>
-				<input type="submit" value="Login">
-			</form>
-		
-			<script>
-				document.getElementById('login-form').addEventListener('submit', function(event) {
-					event.preventDefault(); // Prevent the form from submitting normally
-		
-					// Get the form data
-					const username = document.getElementById('username').value;
-					const password = document.getElementById('password').value;
-		
-					// Create a JavaScript object
-					const data = {
-						login: username,
-						password: password
-					};
-		
-					// Convert the JavaScript object to JSON
-					const jsonData = JSON.stringify(data);
-		
-					// You can send the JSON data in the request body
-					fetch('/api/user/login', {
-						method: 'POST',
-						body: jsonData,
-						headers: {
-							'Content-Type': 'application/json'
-						}
-					})
-					.then(response => {
-						if (response.ok) {
-							const authorizationHeader = response.headers.get("Authorization");
-							if (authorizationHeader) {
-           				 		const token = authorizationHeader.split(' ')[1];
+func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			c.log.Info("[%s:controller:AuthorizeUser] invalid request without authentication token", packageName)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 
-            					if (token) {
-                					alert("Login successful\nBearer Token: " + token);
-            					} else {
-                					alert('Token extraction failed');
-            					}
-        					} else {
-            					alert("Authorization header missing in response");
-							}
-						} else {
-							if (response.status === 401) {
-								alert('Unauthorized: Please check your credentials');
-        					} else {
-								alert("Error: Status Code " + response.status);
-        					}
-						}
-					})
-					.catch(error => {
-						console.error("Request error:", error);
-						alert("Network or request error occurred");
-					});
-				});
-			</script>
-		</body>
-		</html>
-	`)
+		token := strings.Split(authHeader, " ")
+		if len(token) != 2 || token[0] != "Bearer" {
+			c.log.Info("[%s:controller:AuthorizeUser] invalid invalid token", packageName)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		userID := c.jwt.GetUserId(token[1])
+		userRole, err := c.usersStrg.GetUserRole(userID)
+		if err != nil {
+			c.log.Info("[%s:controller:AuthorizeUser] failed to search user in system: %v", packageName, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if userRole == -1 {
+			c.log.Info("[%s:controller:AuthorizeUser] user is not registered in system", packageName)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		if userRole < userRoleRequirement {
+			c.log.Info("[%s:controller:AuthorizeUser] user doesn't have permission to resource: %s", packageName, r.URL.Path)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
 }
