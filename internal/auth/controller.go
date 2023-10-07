@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
-	"github.com/erupshis/bonusbridge/internal/auth/users"
-	"github.com/erupshis/bonusbridge/internal/auth/users/ramusers"
+	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
+	"github.com/erupshis/bonusbridge/internal/auth/users/managers/ram"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/go-chi/chi/v5"
@@ -16,13 +16,13 @@ import (
 const packageName = "auth"
 
 type Controller struct {
-	usersStrg users.BaseUsers
+	usersStrg managers.BaseUsersManager
 	jwt       jwtgenerator.JwtGenerator
 
 	log logger.BaseLogger
 }
 
-func CreateAuthenticator(usersStorage users.BaseUsers, jwt jwtgenerator.JwtGenerator, baseLogger logger.BaseLogger) *Controller {
+func CreateAuthenticator(usersStorage managers.BaseUsersManager, jwt jwtgenerator.JwtGenerator, baseLogger logger.BaseLogger) *Controller {
 	return &Controller{
 		usersStrg: usersStorage,
 		jwt:       jwt,
@@ -51,7 +51,7 @@ func (c *Controller) registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer helpers.ExecuteWithLogError(r.Body.Close, c.log)
 
-	var user ramusers.User
+	var user ram.User
 	if err := helpers.UnmarshalData(buf.Bytes(), &user); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		c.log.Info("[controller:registerHandler] bad new user input data")
@@ -100,7 +100,7 @@ func (c *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer helpers.ExecuteWithLogError(r.Body.Close, c.log)
 
-	var user ramusers.User
+	var user ram.User
 	if err := helpers.UnmarshalData(buf.Bytes(), &user); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		c.log.Info("[controller:loginHandler] bad new user input data")

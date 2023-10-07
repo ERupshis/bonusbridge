@@ -9,8 +9,8 @@ import (
 
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
-	"github.com/erupshis/bonusbridge/internal/auth/users"
-	"github.com/erupshis/bonusbridge/internal/auth/users/ramusers"
+	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
+	"github.com/erupshis/bonusbridge/internal/auth/users/managers/ram"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/controllers"
 	"github.com/erupshis/bonusbridge/internal/logger"
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	//authentication.
-	usersStorage := ramusers.Create(log)
+	usersStorage := ram.Create(log)
 	jwtGenerator := jwtgenerator.Create(cfg.JWTKey, 2, log)
 	authController := auth.CreateAuthenticator(usersStorage, jwtGenerator, log)
 
@@ -40,7 +40,7 @@ func main() {
 	//router.Mount("/", authController.Route()) TODO: main page plug.
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
-	router.Mount("/api/user/", authController.AuthorizeUser(mainController.Route(), users.RoleUser))
+	router.Mount("/api/user/", authController.AuthorizeUser(mainController.Route(), managers.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)

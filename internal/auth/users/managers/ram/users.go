@@ -1,10 +1,10 @@
-package ramusers
+package ram
 
 import (
 	"errors"
 	"fmt"
 
-	"github.com/erupshis/bonusbridge/internal/auth/users"
+	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
 
@@ -21,8 +21,8 @@ type User struct {
 }
 
 var usersStorage = []User{
-	{Login: "u1", Password: "p1", id: 1, role: users.RoleAdmin},
-	{Login: "user2", Password: "password2", id: 2, role: users.RoleUser},
+	{Login: "u1", Password: "p1", id: 1, role: managers.RoleAdmin},
+	{Login: "user2", Password: "password2", id: 2, role: managers.RoleUser},
 }
 
 type Storage struct {
@@ -31,7 +31,7 @@ type Storage struct {
 	log logger.BaseLogger
 }
 
-func Create(baseLogger logger.BaseLogger) users.BaseUsers {
+func Create(baseLogger logger.BaseLogger) managers.BaseUsersManager {
 	return &Storage{
 		log:   baseLogger,
 		users: usersStorage,
@@ -39,7 +39,7 @@ func Create(baseLogger logger.BaseLogger) users.BaseUsers {
 }
 
 func (s *Storage) AddUser(login string, password string) (int, error) {
-	s.users = append(s.users, User{id: len(s.users), Login: login, Password: password, role: users.RoleUser})
+	s.users = append(s.users, User{id: len(s.users), Login: login, Password: password, role: managers.RoleUser})
 
 	user, err := s.getUser(login)
 	if err != nil {
