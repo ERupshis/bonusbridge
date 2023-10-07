@@ -1,15 +1,11 @@
-package users
+package ramusers
 
 import (
 	"errors"
 	"fmt"
 
+	"github.com/erupshis/bonusbridge/internal/auth/users"
 	"github.com/erupshis/bonusbridge/internal/logger"
-)
-
-const (
-	RoleUser = iota
-	RoleAdmin
 )
 
 // errNotFound missing user in database.
@@ -24,9 +20,9 @@ type User struct {
 	role int
 }
 
-var users = []User{
-	{Login: "u1", Password: "p1", id: 1, role: RoleAdmin},
-	{Login: "user2", Password: "password2", id: 2, role: RoleUser},
+var usersStorage = []User{
+	{Login: "u1", Password: "p1", id: 1, role: users.RoleAdmin},
+	{Login: "user2", Password: "password2", id: 2, role: users.RoleUser},
 }
 
 type Storage struct {
@@ -35,15 +31,15 @@ type Storage struct {
 	log logger.BaseLogger
 }
 
-func Create(baseLogger logger.BaseLogger) Storage {
-	return Storage{
+func Create(baseLogger logger.BaseLogger) users.BaseUsers {
+	return &Storage{
 		log:   baseLogger,
-		users: users,
+		users: usersStorage,
 	}
 }
 
 func (s *Storage) AddUser(login string, password string) (int, error) {
-	s.users = append(s.users, User{id: len(s.users), Login: login, Password: password, role: RoleUser})
+	s.users = append(s.users, User{id: len(s.users), Login: login, Password: password, role: users.RoleUser})
 
 	user, err := s.getUser(login)
 	if err != nil {
@@ -55,26 +51,6 @@ func (s *Storage) AddUser(login string, password string) (int, error) {
 	}
 
 	return user.id, nil
-}
-
-func (s *Storage) getUser(login string) (User, error) {
-	for _, u := range s.users {
-		if login == u.Login {
-			return u, nil
-		}
-	}
-
-	return User{}, errNotFound
-}
-
-func (s *Storage) getUserByID(id int) (User, error) {
-	for idx, u := range s.users {
-		if id == idx {
-			return u, nil
-		}
-	}
-
-	return User{}, errNotFound
 }
 
 func (s *Storage) GetUserId(login string) (int, error) {
@@ -120,6 +96,26 @@ func (s *Storage) ValidateUser(login string, password string) (bool, error) {
 	}
 
 	return password == userPwd, nil
+}
+
+func (s *Storage) getUser(login string) (User, error) {
+	for _, u := range s.users {
+		if login == u.Login {
+			return u, nil
+		}
+	}
+
+	return User{}, errNotFound
+}
+
+func (s *Storage) getUserByID(id int) (User, error) {
+	for idx, u := range s.users {
+		if id == idx {
+			return u, nil
+		}
+	}
+
+	return User{}, errNotFound
 }
 
 func (s *Storage) getUserPassword(login string) (string, error) {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users"
+	"github.com/erupshis/bonusbridge/internal/auth/users/ramusers"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/go-chi/chi/v5"
@@ -15,13 +16,13 @@ import (
 const packageName = "auth"
 
 type Controller struct {
-	usersStrg users.Storage
+	usersStrg users.BaseUsers
 	jwt       jwtgenerator.JwtGenerator
 
 	log logger.BaseLogger
 }
 
-func CreateAuthenticator(usersStorage users.Storage, jwt jwtgenerator.JwtGenerator, baseLogger logger.BaseLogger) *Controller {
+func CreateAuthenticator(usersStorage users.BaseUsers, jwt jwtgenerator.JwtGenerator, baseLogger logger.BaseLogger) *Controller {
 	return &Controller{
 		usersStrg: usersStorage,
 		jwt:       jwt,
@@ -29,12 +30,15 @@ func CreateAuthenticator(usersStorage users.Storage, jwt jwtgenerator.JwtGenerat
 	}
 }
 
-func (c *Controller) Route() *chi.Mux {
+func (c *Controller) RouteRegister() *chi.Mux {
 	r := chi.NewRouter()
+	r.Post("/", c.registerHandler)
+	return r
+}
 
-	r.Post("/register", c.registerHandler)
-	r.Post("/login", c.loginHandler)
-
+func (c *Controller) RouteLoginer() *chi.Mux {
+	r := chi.NewRouter()
+	r.Post("/", c.loginHandler)
 	return r
 }
 
@@ -47,7 +51,7 @@ func (c *Controller) registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer helpers.ExecuteWithLogError(r.Body.Close, c.log)
 
-	var user users.User
+	var user ramusers.User
 	if err := helpers.UnmarshalData(buf.Bytes(), &user); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		c.log.Info("[controller:registerHandler] bad new user input data")
@@ -96,7 +100,7 @@ func (c *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer helpers.ExecuteWithLogError(r.Body.Close, c.log)
 
-	var user users.User
+	var user ramusers.User
 	if err := helpers.UnmarshalData(buf.Bytes(), &user); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		c.log.Info("[controller:loginHandler] bad new user input data")
