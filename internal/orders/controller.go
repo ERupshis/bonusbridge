@@ -38,7 +38,7 @@ func (c *Controller) Route() *chi.Mux {
 func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "text/plain" {
-		c.log.Info("[%s:Controller:addOrderHandler] wrong body content type: %s", contentType)
+		c.log.Info("[%s:Controller:addOrderHandler] wrong body content type: %s", packageName, contentType)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -46,7 +46,7 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 	var reqBody []byte
 	_, err := r.Body.Read(reqBody)
 	if err != nil {
-		c.log.Info("[%s:Controller:addOrderHandler] failed to read request's body: %v", err)
+		c.log.Info("[%s:Controller:addOrderHandler] failed to read request's body: %v", packageName, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -62,7 +62,7 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 	userIDstring := r.Header.Get(data.UserID)
 	userID, err := strconv.ParseInt(userIDstring, 10, 64)
 	if err != nil {
-		c.log.Info("[%s:Controller:addOrderHandler] failed to parse userID from request header: %v", err)
+		c.log.Info("[%s:Controller:addOrderHandler] failed to parse userID from request header: %v", packageName, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -70,19 +70,19 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 	err = c.storage.AddOrder(orderNumber, userID)
 	if err != nil {
 		if errors.As(err, &storage.ErrOrderWasAddedBefore) {
-			c.log.Info("[%s:Controller:addOrderHandler] order '%s' has been already added by user '%d' before", orderNumber, userID)
+			c.log.Info("[%s:Controller:addOrderHandler] order '%s' has been already added by user '%d' before", packageName, orderNumber, userID)
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
 		if errors.As(err, &storage.ErrOrderWasAddedByAnotherUser) {
-			c.log.Info("[%s:Controller:addOrderHandler] order '%s' has been already added by another user '%d' before", orderNumber, userID)
+			c.log.Info("[%s:Controller:addOrderHandler] order '%s' has been already added by another user '%d' before", packageName, orderNumber, userID)
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
 	}
 
-	c.log.Info("[%s:Controller:addOrderHandler] order '%s' has been added in system. userID '%d'", orderNumber, userID)
+	c.log.Info("[%s:Controller:addOrderHandler] order '%s' has been added in system. userID '%d'", packageName, orderNumber, userID)
 	w.WriteHeader(http.StatusAccepted)
 }
 
