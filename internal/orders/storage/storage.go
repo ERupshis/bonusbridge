@@ -8,7 +8,7 @@ import (
 )
 
 var ErrOrderWasAddedByAnotherUser = fmt.Errorf("order has already been added by another user")
-var ErrOrderWasAddedBefore = fmt.Errorf("order has already been added before")
+var ErrOrderWasAddedBefore = fmt.Errorf("order has already been added")
 
 type Storage struct {
 	manager managers.BaseStorageManager

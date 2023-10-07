@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/erupshis/bonusbridge/internal/auth/users/data"
+	"github.com/erupshis/bonusbridge/internal/auth/users/userdata"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/storage"
@@ -59,7 +59,7 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDstring := r.Header.Get(data.UserID)
+	userIDstring := r.Header.Get(userdata.UserID)
 	userID, err := strconv.ParseInt(userIDstring, 10, 64)
 	if err != nil {
 		c.log.Info("[%s:Controller:addOrderHandler] failed to parse userID from request header: %v", packageName, err)

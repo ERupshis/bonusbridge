@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/erupshis/bonusbridge/internal/auth/users/data"
+	"github.com/erupshis/bonusbridge/internal/auth/users/userdata"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 )
 
@@ -17,10 +17,10 @@ func (c *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer helpers.ExecuteWithLogError(r.Body.Close, c.log)
 
-	var user data.User
+	var user userdata.User
 	if err := helpers.UnmarshalData(buf.Bytes(), &user); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		c.log.Info("[controller:loginHandler] bad new user input data")
+		c.log.Info("[controller:loginHandler] bad new user input userdata")
 		return
 	}
 

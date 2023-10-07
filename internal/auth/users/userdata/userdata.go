@@ -1,10 +1,15 @@
-package data
+package userdata
 
 import (
 	"fmt"
 )
 
 const UserID = "userID"
+
+const (
+	RoleUser = iota
+	RoleAdmin
+)
 
 // ErrUserNotFound missing user in database.
 var ErrUserNotFound = fmt.Errorf("user not found")

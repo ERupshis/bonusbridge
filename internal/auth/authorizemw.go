@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/erupshis/bonusbridge/internal/auth/users/data"
+	"github.com/erupshis/bonusbridge/internal/auth/users/userdata"
 )
 
 func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http.Handler {
@@ -44,7 +44,7 @@ func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http
 			return
 		}
 
-		r.Header.Set(data.UserID, fmt.Sprintf("%d", userID))
+		r.Header.Set(userdata.UserID, fmt.Sprintf("%d", userID))
 		h.ServeHTTP(w, r)
 	})
 }

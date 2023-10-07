@@ -2,7 +2,7 @@ package logger
 
 import "net/http"
 
-// responseData additional data for request handler log.
+// responseData additional userdata for request handler log.
 type responseData struct {
 	status int
 	size   int
