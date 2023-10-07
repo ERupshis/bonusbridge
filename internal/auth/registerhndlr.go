@@ -52,7 +52,7 @@ func (c *Controller) registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Authorization", "Bearer "+token)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 
 	c.log.Info("[controller:registerHandler] user '%s' registered successfully", user.Login)
 }
