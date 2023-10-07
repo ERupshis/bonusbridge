@@ -1,6 +1,6 @@
 module github.com/erupshis/bonusbridge
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
