@@ -44,7 +44,7 @@ func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http
 			return
 		}
 
-		r.Header.Add(data.UserID, fmt.Sprintf("%d", userID))
+		r.Header.Set(data.UserID, fmt.Sprintf("%d", userID))
 		h.ServeHTTP(w, r)
 	})
 }
