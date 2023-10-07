@@ -8,11 +8,11 @@ CREATE TABLE IF NOT EXISTS users.roles
 );
 
 INSERT INTO users.roles(role_id)
-VALUES ('admin'),
-       ('user');
+VALUES ('ADMIN'),
+       ('USER');
 
 --USERS IMPLEMENTATION
-CREATE TABLE IF NOT EXISTS persons_data.countries
+CREATE TABLE IF NOT EXISTS users.users
 (
     id   SERIAL PRIMARY KEY,
     login VARCHAR(255) NOT NULL UNIQUE,
