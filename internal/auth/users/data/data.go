@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+const UserID = "userID"
+
 // ErrUserNotFound missing user in database.
 var ErrUserNotFound = fmt.Errorf("user not found")
 
@@ -12,6 +14,6 @@ type User struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 
-	ID   int
+	ID   int64
 	Role int
 }

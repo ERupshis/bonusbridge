@@ -27,8 +27,8 @@ func Create(baseLogger logger.BaseLogger) managers.BaseUsersManager {
 	}
 }
 
-func (s *Storage) AddUser(login string, password string) (int, error) {
-	s.users = append(s.users, data.User{ID: len(s.users), Login: login, Password: password, Role: managers.RoleUser})
+func (s *Storage) AddUser(login string, password string) (int64, error) {
+	s.users = append(s.users, data.User{ID: int64(len(s.users)), Login: login, Password: password, Role: managers.RoleUser})
 
 	user, err := s.getUser(login)
 	if err != nil {
@@ -42,7 +42,7 @@ func (s *Storage) AddUser(login string, password string) (int, error) {
 	return user.ID, nil
 }
 
-func (s *Storage) GetUserId(login string) (int, error) {
+func (s *Storage) GetUserId(login string) (int64, error) {
 	user, err := s.getUser(login)
 	if err != nil {
 		if errors.As(err, &data.ErrUserNotFound) {
@@ -55,7 +55,7 @@ func (s *Storage) GetUserId(login string) (int, error) {
 	return user.ID, nil
 }
 
-func (s *Storage) GetUserRole(userID int) (int, error) {
+func (s *Storage) GetUserRole(userID int64) (int, error) {
 	user, err := s.getUserByID(userID)
 	if err != nil {
 		if errors.As(err, &data.ErrUserNotFound) {
@@ -97,9 +97,9 @@ func (s *Storage) getUser(login string) (data.User, error) {
 	return data.User{}, data.ErrUserNotFound
 }
 
-func (s *Storage) getUserByID(id int) (data.User, error) {
+func (s *Storage) getUserByID(userID int64) (data.User, error) {
 	for idx, u := range s.users {
-		if id == idx {
+		if userID == int64(idx) {
 			return u, nil
 		}
 	}

@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 )
 
 func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http.Handler {
@@ -41,6 +44,7 @@ func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http
 			return
 		}
 
+		r.Header.Add(data.UserID, fmt.Sprintf("%d", userID))
 		h.ServeHTTP(w, r)
 	})
 }

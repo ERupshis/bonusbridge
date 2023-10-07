@@ -10,10 +10,12 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
-	"github.com/erupshis/bonusbridge/internal/auth/users/managers/ram"
+	ramUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/ram"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders"
+	"github.com/erupshis/bonusbridge/internal/orders/storage"
+	ramOrders "github.com/erupshis/bonusbridge/internal/orders/storage/managers/ram"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -28,12 +30,14 @@ func main() {
 	}
 
 	//authentication.
-	usersStorage := ram.Create(log)
+	usersStorage := ramUsers.Create(log)
 	jwtGenerator := jwtgenerator.Create(cfg.JWTKey, 2, log)
 	authController := auth.CreateAuthenticator(usersStorage, jwtGenerator, log)
 
-	//main system.
-	ordersController := orders.CreateController(log)
+	//orders.
+	storageManager := ramOrders.Create(log)
+	ordersStorage := storage.Create(storageManager, log)
+	ordersController := orders.CreateController(ordersStorage, log)
 
 	//controllers mounting.
 	router := chi.NewRouter()
