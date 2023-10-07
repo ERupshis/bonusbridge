@@ -3,7 +3,9 @@ package orders
 import (
 	"net/http"
 
+	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
+	"github.com/erupshis/bonusbridge/internal/orders/validator"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -31,10 +33,22 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var reqBody []byte
+	_, err := r.Body.Read(reqBody)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer helpers.ExecuteWithLogError(r.Body.Close, c.log)
+
+	if !validator.IsLuhnValid(string(reqBody)) {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+
 	//200 — номер заказа уже был загружен этим пользователем;
 	//202 — новый номер заказа принят в обработку;
 	//409 — номер заказа уже был загружен другим пользователем;
-	//422 — неверный формат номера заказа;
 	//500 — внутренняя ошибка сервера.
 }
 
