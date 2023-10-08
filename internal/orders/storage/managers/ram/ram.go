@@ -18,6 +18,7 @@ type manager struct {
 }
 
 func Create(baseLogger logger.BaseLogger) managers.BaseStorageManager {
+	baseLogger.Info("[ram:Create] ram storage created")
 	return &manager{
 		log:    baseLogger,
 		orders: make([]data.Order, 0),
