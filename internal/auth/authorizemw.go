@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -44,7 +45,7 @@ func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http
 			return
 		}
 
-		r.Header.Set(userdata.UserID, fmt.Sprintf("%d", userID))
-		h.ServeHTTP(w, r)
+		ctxWithValue := context.WithValue(r.Context(), userdata.UserID, fmt.Sprintf("%d", userID))
+		h.ServeHTTP(w, r.WithContext(ctxWithValue))
 	})
 }

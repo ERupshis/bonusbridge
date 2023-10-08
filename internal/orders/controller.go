@@ -59,8 +59,14 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDstring := r.Header.Get(userdata.UserID)
-	userID, err := strconv.ParseInt(userIDstring, 10, 64)
+	userIDraw := r.Context().Value(userdata.UserID)
+	if userIDraw == nil {
+		c.log.Info("[%s:Controller:addOrderHandler] missing userID in request context", packageName)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	userID, err := strconv.ParseInt(userIDraw.(string), 10, 64)
 	if err != nil {
 		c.log.Info("[%s:Controller:addOrderHandler] failed to parse userID from request header: %v", packageName, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -88,4 +94,8 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) getOrdersHandler(w http.ResponseWriter, r *http.Request) {
 
+	//200 — успешная обработка запроса.
+	//204 — нет данных для ответа.
+	//401 — пользователь не авторизован.
+	//500 — внутренняя ошибка сервера.
 }

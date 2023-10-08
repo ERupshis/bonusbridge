@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/logger"
+	"github.com/erupshis/bonusbridge/internal/orders/storage/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
 )
 
@@ -28,4 +29,8 @@ func (s *Storage) AddOrder(number string, userID int64) error {
 	//TODO: if missing - add new order in system.
 
 	return nil
+}
+
+func (s *Storage) GetOrders(userID int64) ([]data.Order, error) {
+	return nil, nil
 }
