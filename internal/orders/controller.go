@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -88,11 +89,40 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) getOrdersHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r.Context())
+	if err != nil {
+		c.log.Info("[%s:Controller:addOrderHandler] failed to extract userID: %v", packageName, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	//200 — успешная обработка запроса.
-	//204 — нет данных для ответа.
-	//401 — пользователь не авторизован.
-	//500 — внутренняя ошибка сервера.
+	orders, err := c.storage.GetOrders(userID)
+	if err != nil {
+		c.log.Info("[%s:Controller:addOrderHandler] failed to get user's '%d' orders: %v", packageName, userID, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(orders) == 0 {
+		c.log.Info("[%s:Controller:addOrderHandler] orders associated with user '%d' are not found: %v", packageName, userID, err)
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	respBody, err := json.Marshal(orders)
+	if err != nil {
+		c.log.Info("[%s:Controller:addOrderHandler] failed to marshal user '%d' orders: %v", packageName, userID, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(respBody); err != nil {
+		c.log.Info("[%s:Controller:addOrderHandler] failed to write orders data in response body: %v", packageName, err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+	}
 }
 
 func getUserIDFromContext(ctx context.Context) (int64, error) {
