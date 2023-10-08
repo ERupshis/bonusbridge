@@ -1,7 +1,9 @@
 package orders
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -59,16 +61,9 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDraw := r.Context().Value(userdata.UserID)
-	if userIDraw == nil {
-		c.log.Info("[%s:Controller:addOrderHandler] missing userID in request context", packageName)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	userID, err := strconv.ParseInt(userIDraw.(string), 10, 64)
+	userID, err := getUserIDFromContext(r.Context())
 	if err != nil {
-		c.log.Info("[%s:Controller:addOrderHandler] failed to parse userID from request header: %v", packageName, err)
+		c.log.Info("[%s:Controller:addOrderHandler] failed to extract userID: %v", packageName, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -98,4 +93,18 @@ func (c *Controller) getOrdersHandler(w http.ResponseWriter, r *http.Request) {
 	//204 — нет данных для ответа.
 	//401 — пользователь не авторизован.
 	//500 — внутренняя ошибка сервера.
+}
+
+func getUserIDFromContext(ctx context.Context) (int64, error) {
+	userIDraw := ctx.Value(userdata.UserID)
+	if userIDraw == nil {
+		return -1, fmt.Errorf("missing userID in request's context")
+	}
+
+	userID, err := strconv.ParseInt(userIDraw.(string), 10, 64)
+	if err != nil {
+		return -1, fmt.Errorf("parse userID from request's context: %w", err)
+	}
+
+	return userID, nil
 }
