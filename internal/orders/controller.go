@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -46,8 +47,8 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var reqBody []byte
-	_, err := r.Body.Read(reqBody)
+	var reqBody bytes.Buffer
+	_, err := reqBody.ReadFrom(r.Body)
 	if err != nil {
 		c.log.Info("[%s:Controller:addOrderHandler] failed to read request's body: %v", packageName, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -55,7 +56,7 @@ func (c *Controller) addOrderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer helpers.ExecuteWithLogError(r.Body.Close, c.log)
 
-	orderNumber := string(reqBody)
+	orderNumber := reqBody.String()
 	if !validator.IsLuhnValid(orderNumber) {
 		c.log.Info("[%s:Controller:addOrderHandler] order number didn't pass Luhn's algorithm check")
 		w.WriteHeader(http.StatusUnprocessableEntity)

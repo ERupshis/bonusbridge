@@ -25,12 +25,32 @@ func Create(manager managers.BaseStorageManager, baseLogger logger.BaseLogger) S
 }
 
 func (s *Storage) AddOrder(number string, userID int64) error {
-	//TODO: check order presence, compare userID if exists. return error
-	//TODO: if missing - add new order in system.
+	order, err := s.manager.GetOrder(number)
+	if err != nil {
+		return fmt.Errorf("get order from storage: %w", err)
+	}
 
-	return nil
+	if order == nil {
+		err = s.manager.AddOrder(number, userID)
+		if err != nil {
+			return fmt.Errorf("add new order in storage: %w", err)
+		}
+
+		return nil
+	} else {
+		if order.UserID == userID {
+			return fmt.Errorf("add order in storage: %w", ErrOrderWasAddedBefore)
+		} else {
+			return fmt.Errorf("add order in storage: %w", ErrOrderWasAddedByAnotherUser)
+		}
+	}
 }
 
 func (s *Storage) GetOrders(userID int64) ([]data.Order, error) {
-	return nil, nil
+	orders, err := s.manager.GetOrders(userID)
+	if err != nil {
+		return nil, fmt.Errorf("get orders from storage: %w", err)
+	}
+
+	return orders, nil
 }

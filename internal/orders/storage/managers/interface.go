@@ -6,5 +6,6 @@ import (
 
 type BaseStorageManager interface {
 	AddOrder(number string, userID int64) error
+	GetOrder(number string) (*data.Order, error)
 	GetOrders(userID int64) ([]data.Order, error)
 }
