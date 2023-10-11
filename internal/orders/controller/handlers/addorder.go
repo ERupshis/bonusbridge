@@ -21,7 +21,7 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentType := r.Header.Get("Content-Type")
 		if contentType != "text/plain" {
-			log.Info("[%s:Controller:AddOrderHandler] wrong body content type: %s", packageName, contentType)
+			log.Info("[%s:AddOrderHandler] wrong body content type: %s", packageName, contentType)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -29,7 +29,7 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 		var reqBody bytes.Buffer
 		_, err := reqBody.ReadFrom(r.Body)
 		if err != nil {
-			log.Info("[%s:Controller:AddOrderHandler] failed to read request's body: %v", packageName, err)
+			log.Info("[%s:AddOrderHandler] failed to read request's body: %v", packageName, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -37,14 +37,14 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 
 		orderNumber := reqBody.String()
 		if !validator.IsLuhnValid(orderNumber) {
-			log.Info("[%s:Controller:AddOrderHandler] order number didn't pass Luhn's algorithm check")
+			log.Info("[%s:AddOrderHandler] order number didn't pass Luhn's algorithm check", packageName)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
 
 		userID, err := getUserIDFromContext(r.Context())
 		if err != nil {
-			log.Info("[%s:Controller:AddOrderHandler] failed to extract userID: %v", packageName, err)
+			log.Info("[%s:AddOrderHandler] failed to extract userID: %v", packageName, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -52,19 +52,19 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 		err = strg.AddOrder(orderNumber, userID)
 		if err != nil {
 			if errors.As(err, &storage.ErrOrderWasAddedBefore) {
-				log.Info("[%s:Controller:AddOrderHandler] order '%s' has been already added by user '%d' before", packageName, orderNumber, userID)
+				log.Info("[%s:AddOrderHandler] order '%s' has been already added by user '%d' before", packageName, orderNumber, userID)
 				w.WriteHeader(http.StatusOK)
 				return
 			}
 
 			if errors.As(err, &storage.ErrOrderWasAddedByAnotherUser) {
-				log.Info("[%s:Controller:AddOrderHandler] order '%s' has been already added by another user '%d' before", packageName, orderNumber, userID)
+				log.Info("[%s:AddOrderHandler] order '%s' has been already added by another user '%d' before", packageName, orderNumber, userID)
 				w.WriteHeader(http.StatusConflict)
 				return
 			}
 		}
 
-		log.Info("[%s:Controller:AddOrderHandler] order '%s' has been added in system. userID '%d'", packageName, orderNumber, userID)
+		log.Info("[%s:AddOrderHandler] order '%s' has been added in system. userID '%d'", packageName, orderNumber, userID)
 		w.WriteHeader(http.StatusAccepted)
 	}
 }
