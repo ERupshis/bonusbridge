@@ -1,20 +1,34 @@
 package postgresql
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
+	"github.com/erupshis/bonusbridge/internal/orders/storage/data"
+	"github.com/erupshis/bonusbridge/internal/retryer"
 	"github.com/jackc/pgerrcode"
 	"github.com/pkg/errors"
 )
 
 const (
-	SchemaName     = "persons_data"
-	PersonsTable   = "persons"
-	GendersTable   = "genders"
-	CountriesTable = "countries"
+	SchemaName  = "orders"
+	OrdersTable = "orders"
 )
 
-// columnsInPersonsTable slice of main table attributes in database.
-var columnsInPersonsTable = []string{"name", "surname", "patronymic", "age", "gender_id", "country_id"}
+const (
+	statusNew = iota + 1
+	statusProcessing
+	statusInvalid
+	statusProcessed
+	statusUndefined
+)
+
+// columnsInOrdersTable slice of main table attributes in database.
+var columnsInOrdersTable = []string{"num", "status_id", "user_id", "accrual_status", "uploaded_at"}
 
 // databaseErrorsToRetry errors to retry request to database.
 var databaseErrorsToRetry = []error{
@@ -43,12 +57,11 @@ func CreateHandler(log logger.BaseLogger) QueriesHandler {
 	return QueriesHandler{log: log}
 }
 
-/*
-// InsertPerson performs direct query request to database to add new person.
-func (q *QueriesHandler) InsertPerson(ctx context.Context, tx *sql.Tx, personData *datastructs.PersonData, genderId int64, countryId int64) (int64, error) {
-	errorMsg := fmt.Sprintf("insert person '%v' in '%s'", personData, PersonsTable) + ": %w"
+// InsertOrder performs direct query request to database to add new order.
+func (q *QueriesHandler) InsertOrder(ctx context.Context, tx *sql.Tx, orderData *data.Order) (int64, error) {
+	errorMsg := fmt.Sprintf("insert order '%v' in '%s'", *orderData, OrdersTable) + ": %w"
 
-	stmt, err := createInsertPersonStmt(ctx, tx)
+	stmt, err := createInsertOrderStmt(ctx, tx)
 	if err != nil {
 		return -1, fmt.Errorf(errorMsg, err)
 	}
@@ -56,15 +69,15 @@ func (q *QueriesHandler) InsertPerson(ctx context.Context, tx *sql.Tx, personDat
 
 	newPersonId := int64(0)
 	query := func(context context.Context) error {
-		err := stmt.QueryRowContext(
+		_, err := stmt.ExecContext(
 			context,
-			personData.Name,
-			personData.Surname,
-			personData.Patronymic,
-			personData.Age,
-			genderId,
-			countryId,
-		).Scan(&newPersonId)
+			orderData.Number,
+			getOrderStatusID(orderData.Status),
+			orderData.UserID,
+			0,
+			orderData.UploadedAt,
+		)
+
 		return err
 	}
 	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, q.log, []int{1, 1, 3}, databaseErrorsToRetry, query)
@@ -76,20 +89,21 @@ func (q *QueriesHandler) InsertPerson(ctx context.Context, tx *sql.Tx, personDat
 }
 
 // createInsertPersonStmt generates statement for insert query.
-func createInsertPersonStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
+func createInsertOrderStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	psqlInsert, _, err := psql.Insert(getTableFullName(PersonsTable)).
-		Columns(columnsInPersonsTable...).
-		Values(make([]interface{}, len(columnsInPersonsTable))...).
+	psqlInsert, _, err := psql.Insert(getTableFullName(OrdersTable)).
+		Columns(columnsInOrdersTable...).
+		Values(make([]interface{}, len(columnsInOrdersTable))...).
 		ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql insert statement for '"+getTableFullName(PersonsTable)+"': %w", err)
+		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", getTableFullName(OrdersTable), err)
 	}
-	return tx.PrepareContext(ctx, psqlInsert+"RETURNING id")
+	return tx.PrepareContext(ctx, psqlInsert)
 }
 
+/*
 // SelectPersons performs direct query request to database to select persons satisfying filters. Supports pagination.
 func (q *QueriesHandler) SelectPersons(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, pageNum int64, pageSize int64) ([]datastructs.PersonData, error) {
 	errorMsg := fmt.Sprintf("select persons with filter '%v' in '%s'", filters, PersonsTable) + ": %w"
@@ -381,3 +395,21 @@ func createInsertAdditionalIdStmt(ctx context.Context, tx *sql.Tx, name string, 
 	return tx.PrepareContext(ctx, psqlInsert+"RETURNING id")
 }
 */
+
+func getOrderStatusID(statusStr string) int {
+	res := statusUndefined
+	switch statusStr {
+	case "NEW":
+		res = statusNew
+	case "PROCESSING":
+		res = statusProcessing
+	case "INVALID":
+		res = statusInvalid
+	case "PROCESSED":
+		res = statusProcessed
+	default:
+		res = statusUndefined
+	}
+
+	return res
+}

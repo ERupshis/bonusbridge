@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/logger"
@@ -24,14 +25,14 @@ func Create(manager managers.BaseStorageManager, baseLogger logger.BaseLogger) S
 	}
 }
 
-func (s *Storage) AddOrder(number string, userID int64) error {
+func (s *Storage) AddOrder(ctx context.Context, number string, userID int64) error {
 	order, err := s.manager.GetOrder(number)
 	if err != nil {
 		return fmt.Errorf("get order from storage: %w", err)
 	}
 
 	if order == nil {
-		err = s.manager.AddOrder(number, userID)
+		_, err = s.manager.AddOrder(ctx, number, userID)
 		if err != nil {
 			return fmt.Errorf("add new order in storage: %w", err)
 		}

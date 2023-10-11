@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/erupshis/bonusbridge/internal/config"
+	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
@@ -43,7 +45,7 @@ func CreatePostgreDB(ctx context.Context, cfg config.Config, queriesHandler Quer
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file://db/migrations", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file://db/migrations/orders", "postgres", driver)
 	if err != nil {
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
@@ -84,11 +86,41 @@ func (p *postgresDB) Close() error {
 	return p.database.Close()
 }
 
-func (p *postgresDB) AddOrder(number string, userID int64) error {
-	return nil
+func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) (int64, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	newOrder := &data.Order{
+		Number:     number,
+		UserID:     userID,
+		Status:     "NEW",
+		Accrual:    "",
+		UploadedAt: time.Now(),
+	}
+
+	p.log.Info("[postgresDB:AddOrder] start transaction")
+	errorMessage := "add order in db: %w"
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return -1, fmt.Errorf(errorMessage, err)
+	}
+
+	id, err := p.handler.InsertOrder(ctx, tx, newOrder)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return -1, fmt.Errorf(errorMessage, err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return -1, fmt.Errorf(errorMessage, err)
+	}
+
+	p.log.Info("[postgresDB:AddOrder] transaction successful")
+	return id, nil
 }
 
 func (p *postgresDB) GetOrder(number string) (*data.Order, error) {
+	//TODO: need to finally launch addOrder.
 	return nil, nil
 }
 func (p *postgresDB) GetOrders(userID int64) ([]data.Order, error) {

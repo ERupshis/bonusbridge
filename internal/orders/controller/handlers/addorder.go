@@ -49,19 +49,23 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 			return
 		}
 
-		err = strg.AddOrder(orderNumber, userID)
+		err = strg.AddOrder(r.Context(), orderNumber, userID)
 		if err != nil {
-			if errors.As(err, &storage.ErrOrderWasAddedBefore) {
+			if errors.Is(err, storage.ErrOrderWasAddedBefore) {
 				log.Info("[%s:AddOrderHandler] order '%s' has been already added by user '%d' before", packageName, orderNumber, userID)
 				w.WriteHeader(http.StatusOK)
 				return
 			}
 
-			if errors.As(err, &storage.ErrOrderWasAddedByAnotherUser) {
+			if errors.Is(err, storage.ErrOrderWasAddedByAnotherUser) {
 				log.Info("[%s:AddOrderHandler] order '%s' has been already added by another user '%d' before", packageName, orderNumber, userID)
 				w.WriteHeader(http.StatusConflict)
 				return
 			}
+
+			log.Info("[%s:AddOrderHandler] unknown error: %v", packageName, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		log.Info("[%s:AddOrderHandler] order '%s' has been added in system. userID '%d'", packageName, orderNumber, userID)

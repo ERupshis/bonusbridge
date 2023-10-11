@@ -1,6 +1,7 @@
 package ram
 
 import (
+	"context"
 	"sort"
 	"sync"
 	"time"
@@ -25,7 +26,7 @@ func Create(baseLogger logger.BaseLogger) managers.BaseStorageManager {
 	}
 }
 
-func (m *manager) AddOrder(number string, userID int64) error {
+func (m *manager) AddOrder(_ context.Context, number string, userID int64) (int64, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.orders = append(m.orders, data.Order{
@@ -36,7 +37,7 @@ func (m *manager) AddOrder(number string, userID int64) error {
 		Accrual:    "",
 		UploadedAt: time.Now(),
 	})
-	return nil
+	return int64(len(m.orders)), nil
 }
 
 func (m *manager) GetOrder(number string) (*data.Order, error) {

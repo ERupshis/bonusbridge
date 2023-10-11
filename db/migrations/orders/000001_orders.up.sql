@@ -11,15 +11,16 @@ INSERT INTO orders.statuses(status_id)
 VALUES ('NEW'),
        ('PROCESSING'),
        ('INVALID'),
-       ('PROCESSED');
+       ('PROCESSED'),
+       ('UNDEFINED');
 
 --ORDERS ITSELF
-CREATE TABLE IF NOT EXISTS persons_data.countries
+CREATE TABLE IF NOT EXISTS orders.orders
 (
     id SERIAL PRIMARY KEY,
     num NUMERIC NOT NULL UNIQUE,
     status_id SMALLINT REFERENCES orders.statuses(id) NOT NULL,
-    user_id INTEGER NOT NULL  users.users(id),
+    user_id INTEGER REFERENCES users.users(id) NOT NULL ,
     accrual_status SMALLINT,
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

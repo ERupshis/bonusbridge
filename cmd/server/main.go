@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,7 +16,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/controller"
 	"github.com/erupshis/bonusbridge/internal/orders/storage"
-	ramOrders "github.com/erupshis/bonusbridge/internal/orders/storage/managers/ram"
+	postgresOrders "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -34,8 +35,17 @@ func main() {
 	jwtGenerator := jwtgenerator.Create(cfg.JWTKey, 2, log)
 	authController := auth.CreateAuthenticator(usersStorage, jwtGenerator, log)
 
+	ctxWithCancel, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	//orders.
-	storageManager := ramOrders.Create(log)
+	ordersHandler := postgresOrders.CreateHandler(log)
+	storageManager, err := postgresOrders.CreatePostgreDB(ctxWithCancel, cfg, ordersHandler, log)
+	if err != nil {
+		log.Info("failed to connect to orders database: %v", err)
+		return
+	}
+
 	ordersStorage := storage.Create(storageManager, log)
 	ordersController := controller.CreateController(ordersStorage, log)
 
