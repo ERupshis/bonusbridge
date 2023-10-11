@@ -38,7 +38,7 @@ func checkFlags(config *Config) {
 	flag.StringVar(&config.HostAddr, flagHostAddress, "localhost:8080", "server endpoint")
 
 	// postgres.
-	flag.StringVar(&config.DatabaseDSN, flagDatabaseDSN, "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable", "database DSN")
+	flag.StringVar(&config.DatabaseDSN, flagDatabaseDSN, "postgres://postgres:postgres@localhost:5432/gophermart_db?sslmode=disable", "database DSN")
 
 	// accrual.
 	flag.StringVar(&config.AccrualAddr, flagAccrualAddress, "TODO", "accrual system address")
