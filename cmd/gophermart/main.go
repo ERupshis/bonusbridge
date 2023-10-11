@@ -10,6 +10,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	ramUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/ram"
+	"github.com/erupshis/bonusbridge/internal/auth/users/userdata"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/go-chi/chi/v5"
@@ -48,7 +49,7 @@ func main() {
 	//router.Mount("/", authController.Route()) TODO: main page plug.
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
-	//router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), userdata.RoleUser))
+	router.Mount("/api/user/orders", authController.AuthorizeUser(chi.NewRouter(), userdata.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)
