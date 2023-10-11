@@ -13,7 +13,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth/users/userdata"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/orders"
+	"github.com/erupshis/bonusbridge/internal/orders/controller"
 	"github.com/erupshis/bonusbridge/internal/orders/storage"
 	ramOrders "github.com/erupshis/bonusbridge/internal/orders/storage/managers/ram"
 	"github.com/go-chi/chi/v5"
@@ -37,7 +37,7 @@ func main() {
 	//orders.
 	storageManager := ramOrders.Create(log)
 	ordersStorage := storage.Create(storageManager, log)
-	ordersController := orders.CreateController(ordersStorage, log)
+	ordersController := controller.CreateController(ordersStorage, log)
 
 	//controllers mounting.
 	router := chi.NewRouter()
@@ -54,6 +54,6 @@ func main() {
 	}()
 
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, os.Kill, syscall.SIGTERM)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	<-sigCh
 }
