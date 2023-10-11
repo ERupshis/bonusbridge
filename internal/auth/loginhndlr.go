@@ -8,6 +8,8 @@ import (
 	"github.com/erupshis/bonusbridge/internal/helpers"
 )
 
+//TODO: split in independent package.
+
 func (c *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 	buf := bytes.Buffer{}
 	if _, err := buf.ReadFrom(r.Body); err != nil {

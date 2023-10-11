@@ -9,6 +9,8 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth/users/userdata"
 )
 
+//TODO: split in independent package.
+
 func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
