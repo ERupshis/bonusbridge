@@ -34,6 +34,13 @@ func SelectOrders(ctx context.Context, tx *sql.Tx, filters map[string]interface{
 			context,
 			valuesToUpdate...,
 		)
+
+		if err == nil {
+			if rows.Err() != nil {
+				return fmt.Errorf(errorMsg, rows.Err())
+			}
+		}
+
 		return err
 	}
 	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dbData.DatabaseErrorsToRetry, query)
