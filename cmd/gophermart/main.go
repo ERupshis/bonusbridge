@@ -46,8 +46,8 @@ func main() {
 	}
 
 	ordersStorage := storage.Create(storageManager, log)
-	ordersController := controller.CreateController(ordersStorage, log)
-	ordersController.Route()
+	_ := controller.CreateController(ordersStorage, log)
+
 	//controllers mounting.
 	router := chi.NewRouter()
 	//router.Mount("/", authController.Route()) TODO: main page plug.
