@@ -47,13 +47,13 @@ func main() {
 
 	ordersStorage := storage.Create(storageManager, log)
 	ordersController := controller.CreateController(ordersStorage, log)
-
+	ordersController.Route()
 	//controllers mounting.
 	router := chi.NewRouter()
 	//router.Mount("/", authController.Route()) TODO: main page plug.
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
-	router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), userdata.RoleUser))
+	router.Mount("/api/user/orders", authController.AuthorizeUser(chi.NewRouter(), userdata.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)

@@ -30,11 +30,6 @@ func GetOrdersHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerF
 			return
 		}
 
-		//TODO: remove. PLUG FOR TESTS CHECK ONLY.
-		for _, order := range orders {
-			order.Status = "PROCESSED"
-		}
-
 		respBody, err := json.Marshal(orders)
 		if err != nil {
 			log.Info("[%s:GetOrdersHandler] failed to marshal user '%d' orders: %v", packageName, userID, err)
