@@ -8,23 +8,16 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/orders/storage/data"
+	"github.com/erupshis/bonusbridge/internal/orders/data"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 	"github.com/jackc/pgerrcode"
 	"github.com/pkg/errors"
 )
 
 const (
-	SchemaName  = "orders"
-	OrdersTable = "orders"
-)
-
-const (
-	statusNew = iota + 1
-	statusProcessing
-	statusInvalid
-	statusProcessed
-	statusUndefined
+	SchemaName    = "orders"
+	OrdersTable   = "orders"
+	StatusesTable = "statuses"
 )
 
 // columnsInOrdersTable slice of main table attributes in database.
@@ -72,7 +65,7 @@ func (q *QueriesHandler) InsertOrder(ctx context.Context, tx *sql.Tx, orderData 
 		_, err := stmt.ExecContext(
 			context,
 			orderData.Number,
-			getOrderStatusID(orderData.Status),
+			data.GetOrderStatusID(orderData.Status),
 			orderData.UserID,
 			0,
 			orderData.UploadedAt,
@@ -103,12 +96,11 @@ func createInsertOrderStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
 	return tx.PrepareContext(ctx, psqlInsert)
 }
 
-/*
-// SelectPersons performs direct query request to database to select persons satisfying filters. Supports pagination.
-func (q *QueriesHandler) SelectPersons(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, pageNum int64, pageSize int64) ([]datastructs.PersonData, error) {
-	errorMsg := fmt.Sprintf("select persons with filter '%v' in '%s'", filters, PersonsTable) + ": %w"
+// SelectOrders performs direct query request to database to select orders satisfying filters.
+func (q *QueriesHandler) SelectOrders(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) ([]data.Order, error) {
+	errorMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, OrdersTable) + ": %w"
 
-	stmt, err := createSelectPersonsStmt(ctx, tx, filters, pageNum, pageSize)
+	stmt, err := createSelectOrdersStmt(ctx, tx, filters)
 	if err != nil {
 		return nil, fmt.Errorf(errorMsg, err)
 	}
@@ -133,85 +125,70 @@ func (q *QueriesHandler) SelectPersons(ctx context.Context, tx *sql.Tx, filters 
 	}
 
 	defer helpers.ExecuteWithLogError(rows.Close, q.log)
-	var res []datastructs.PersonData
+	var res []data.Order
 	for rows.Next() {
-		data := datastructs.PersonData{}
+		order := data.Order{}
 		err := rows.Scan(
-			&data.Id,
-			&data.Name,
-			&data.Surname,
-			&data.Patronymic,
-			&data.Age,
-			&data.Gender,
-			&data.Country,
+			&order.ID,
+			&order.Number,
+			&order.UserID,
+			&order.Status,
+			&order.Accrual,
+			&order.UploadedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("parse db result: %w", err)
 		}
 
-		res = append(res, data)
+		res = append(res, order)
 	}
 
 	return res, nil
 }
 
-// convertToInitCap postgres aggregation func wrapper.
-func convertToInitCap(val string) string {
-	return "INITCAP(" + val + ")"
-}
-
-// convertToUpper postgres aggregation func wrapper.
-func convertToUpper(val string) string {
-	return "UPPER(" + val + ")"
-}
-
-// createSelectPersonsStmt generates statement for select query.
-func createSelectPersonsStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, pageNum int64, pageSize int64) (*sql.Stmt, error) {
+// createSelectOrdersStmt generates statement for select query.
+func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	gendersJoin := fmt.Sprintf("LEFT JOIN %s ON %[1]s.id = %s.gender_id", getTableFullName(GendersTable), getTableFullName(PersonsTable))
-	countriesJoin := fmt.Sprintf("LEFT JOIN %s ON %[1]s.id = %s.country_id", getTableFullName(CountriesTable), getTableFullName(PersonsTable))
+	statusesJoin := fmt.Sprintf("LEFT JOIN %s ON %[1]s.id = %s.status_id", getTableFullName(StatusesTable), getTableFullName(OrdersTable))
 	builder := psql.Select(
-		getTableFullName(PersonsTable)+".id",
-		convertToInitCap(getTableFullName(PersonsTable)+".name"),
-		convertToInitCap("surname"),
-		convertToInitCap("patronymic"),
-		"age",
-		getTableFullName(GendersTable)+".name",
-		convertToUpper(getTableFullName(CountriesTable)+".name"),
+		getTableFullName(OrdersTable)+".id",
+		"num",
+		"user_id",
+		"status",
+		"accrual_status",
+		"uploaded_at",
 	).
-		From(getTableFullName(PersonsTable)).
-		JoinClause(gendersJoin).
-		JoinClause(countriesJoin)
+		From(getTableFullName(OrdersTable)).
+		JoinClause(statusesJoin)
 	if len(filters) != 0 {
 		for key := range filters {
 			switch key {
 			case "id":
-				key = getTableFullName(PersonsTable) + ".id"
-			case "name":
-				key = getTableFullName(PersonsTable) + ".name"
-			case "gender":
-				key = getTableFullName(GendersTable) + ".name"
-			case "country":
-				key = getTableFullName(CountriesTable) + ".name"
+				key = getTableFullName(OrdersTable) + ".id"
+			case "number":
+				key = getTableFullName(OrdersTable) + ".num"
+			case "user_id":
+				key = getTableFullName(OrdersTable) + ".user_id"
+			case "status":
+				key = getTableFullName(StatusesTable) + ".status"
+			case "accrual":
+				key = getTableFullName(OrdersTable) + ".accrual_status"
+			case "uploaded_at":
+				key = getTableFullName(OrdersTable) + ".uploaded_at"
 			}
 			builder = builder.Where(sq.Eq{key: "?"})
-		}
-	}
-	if pageSize != 0 {
-		builder = builder.Limit(uint64(pageSize))
-		if pageNum != 0 {
-			builder = builder.Offset(uint64((pageNum - 1) * pageSize))
 		}
 	}
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '"+getTableFullName(PersonsTable)+"': %w", err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", getTableFullName(OrdersTable), err)
 	}
 	return tx.PrepareContext(ctx, psqlSelect)
 }
 
+/*
 // DeletePerson performs direct query request to database to delete person by id.
 func (q *QueriesHandler) DeletePerson(ctx context.Context, tx *sql.Tx, id int64) (int64, error) {
 	errorMsg := fmt.Sprintf("delete person by id '%v' in '%s", id, PersonsTable) + ": %w"
@@ -395,21 +372,3 @@ func createInsertAdditionalIdStmt(ctx context.Context, tx *sql.Tx, name string, 
 	return tx.PrepareContext(ctx, psqlInsert+"RETURNING id")
 }
 */
-
-func getOrderStatusID(statusStr string) int {
-	res := statusUndefined
-	switch statusStr {
-	case "NEW":
-		res = statusNew
-	case "PROCESSING":
-		res = statusProcessing
-	case "INVALID":
-		res = statusInvalid
-	case "PROCESSED":
-		res = statusProcessed
-	default:
-		res = statusUndefined
-	}
-
-	return res
-}

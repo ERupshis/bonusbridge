@@ -4,10 +4,10 @@ CREATE SCHEMA IF NOT EXISTS orders;
 CREATE TABLE IF NOT EXISTS orders.statuses
 (
     id SMALLSERIAL PRIMARY KEY,
-    status_id VARCHAR(15) NOT NULL UNIQUE
+    status VARCHAR(15) NOT NULL UNIQUE
 );
 
-INSERT INTO orders.statuses(status_id)
+INSERT INTO orders.statuses(status)
 VALUES ('NEW'),
        ('PROCESSING'),
        ('INVALID'),

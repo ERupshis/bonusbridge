@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersStorageData(in *jlexer.Lexer, out *Order) {
+func easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersData(in *jlexer.Lexer, out *Order) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -41,7 +41,7 @@ func easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersStorageData
 		case "status":
 			out.Status = string(in.String())
 		case "accrual":
-			out.Accrual = string(in.String())
+			out.Accrual = int(in.Int())
 		case "uploaded_at":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.UploadedAt).UnmarshalJSON(data))
@@ -56,7 +56,7 @@ func easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersStorageData
 		in.Consumed()
 	}
 }
-func easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersStorageData(out *jwriter.Writer, in Order) {
+func easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersData(out *jwriter.Writer, in Order) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -75,10 +75,10 @@ func easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersStorageData
 		out.RawString(prefix)
 		out.String(string(in.Status))
 	}
-	if in.Accrual != "" {
+	if in.Accrual != 0 {
 		const prefix string = ",\"accrual\":"
 		out.RawString(prefix)
-		out.String(string(in.Accrual))
+		out.Int(int(in.Accrual))
 	}
 	{
 		const prefix string = ",\"uploaded_at\":"
@@ -91,23 +91,23 @@ func easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersStorageData
 // MarshalJSON supports json.Marshaler interface
 func (v Order) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersStorageData(&w, v)
+	easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersData(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Order) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersStorageData(w, v)
+	easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersData(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Order) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersStorageData(&r, v)
+	easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersData(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Order) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersStorageData(l, v)
+	easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersData(l, v)
 }

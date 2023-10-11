@@ -12,7 +12,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/orders/storage/data"
+	"github.com/erupshis/bonusbridge/internal/orders/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 	"github.com/golang-migrate/migrate/v4"
@@ -93,79 +93,69 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 		Number:     number,
 		UserID:     userID,
 		Status:     "NEW",
-		Accrual:    "",
+		Accrual:    0,
 		UploadedAt: time.Now(),
 	}
 
 	p.log.Info("[postgresDB:AddOrder] start transaction")
-	errorMessage := "add order in db: %w"
+	errMsg := "add order in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
-		return -1, fmt.Errorf(errorMessage, err)
+		return -1, fmt.Errorf(errMsg, err)
 	}
 
 	id, err := p.handler.InsertOrder(ctx, tx, newOrder)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return -1, fmt.Errorf(errorMessage, err)
+		return -1, fmt.Errorf(errMsg, err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return -1, fmt.Errorf(errorMessage, err)
+		return -1, fmt.Errorf(errMsg, err)
 	}
 
 	p.log.Info("[postgresDB:AddOrder] transaction successful")
 	return id, nil
 }
 
-func (p *postgresDB) GetOrder(number string) (*data.Order, error) {
-	//TODO: need to finally launch addOrder.
-	return nil, nil
+func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	p.log.Info("[postgresDB:GetOrder] start transaction")
+	errMsg := "select order in db: %w"
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	orders, err := p.handler.SelectOrders(ctx, tx, map[string]interface{}{"number": number})
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[postgresDB:GetOrder] transaction successful")
+	if len(orders) == 0 {
+		return nil, nil
+	} else if len(orders) > 1 {
+		return nil, fmt.Errorf(errMsg, fmt.Errorf("more than one order in db with number '%s'", number))
+	}
+
+	return &orders[0], nil
 }
 func (p *postgresDB) GetOrders(userID int64) ([]data.Order, error) {
 	return nil, nil
 }
 
 /*
-// AddPerson add person in database. Creates new values in referenced tables.
-func (p *postgresDB) AddPerson(ctx context.Context, data *datastructs.PersonData) (int64, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
 
-	p.log.Info("[postgresDB:AddPerson] start transaction")
-	errorMessage := "add person in db: %w"
-	tx, err := p.database.BeginTx(ctx, nil)
-	if err != nil {
-		return -1, fmt.Errorf(errorMessage, err)
-	}
-
-	genderId, err := p.handler.GetAdditionalId(ctx, tx, data.Gender, GendersTable)
-	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return -1, fmt.Errorf(errorMessage, err)
-	}
-
-	countryId, err := p.handler.GetAdditionalId(ctx, tx, data.Country, CountriesTable)
-	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return -1, fmt.Errorf(errorMessage, err)
-	}
-
-	newPersonId, err := p.handler.InsertPerson(ctx, tx, data, genderId, countryId)
-	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return -1, fmt.Errorf(errorMessage, err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return -1, fmt.Errorf(errorMessage, err)
-	}
-
-	p.log.Info("[postgresDB:AddPerson] transaction successful")
-	return newPersonId, nil
-}
 
 // SelectPersons returns persons from database satisfying to filters. Supports result pagination.
 func (p *postgresDB) SelectPersons(ctx context.Context, filters map[string]interface{}, pageNum int64, pageSize int64) ([]datastructs.PersonData, error) {

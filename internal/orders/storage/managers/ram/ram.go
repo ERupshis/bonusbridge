@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/orders/storage/data"
+	"github.com/erupshis/bonusbridge/internal/orders/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
 )
 
@@ -40,7 +40,7 @@ func (m *manager) AddOrder(_ context.Context, number string, userID int64) (int6
 	return int64(len(m.orders)), nil
 }
 
-func (m *manager) GetOrder(number string) (*data.Order, error) {
+func (m *manager) GetOrder(_ context.Context, number string) (*data.Order, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	for _, order := range m.orders {

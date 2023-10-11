@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/orders/storage/data"
+	"github.com/erupshis/bonusbridge/internal/orders/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
 )
 
@@ -26,7 +26,7 @@ func Create(manager managers.BaseStorageManager, baseLogger logger.BaseLogger) S
 }
 
 func (s *Storage) AddOrder(ctx context.Context, number string, userID int64) error {
-	order, err := s.manager.GetOrder(number)
+	order, err := s.manager.GetOrder(ctx, number)
 	if err != nil {
 		return fmt.Errorf("get order from storage: %w", err)
 	}
