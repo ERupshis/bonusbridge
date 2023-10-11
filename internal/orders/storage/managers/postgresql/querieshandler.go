@@ -40,7 +40,7 @@ func getTableFullName(table string) string {
 	return SchemaName + "." + table
 }
 
-// QueriesHandler support object that implements database's queries and responsible for connection to databse.
+// QueriesHandler support object that implements database's queries and responsible for connection to database.
 type QueriesHandler struct {
 	log logger.BaseLogger
 }
@@ -334,7 +334,7 @@ func createSelectAdditionalIdStmt(ctx context.Context, tx *sql.Tx, name string, 
 	return tx.PrepareContext(ctx, psqlSelect)
 }
 
-// InsertAdditionalId adds new value forl linked table and returns foreign key from linked table.
+// InsertAdditionalId adds new value for linked table and returns foreign key from linked table.
 func (q *QueriesHandler) InsertAdditionalId(ctx context.Context, tx *sql.Tx, name string, table string) (int64, error) {
 	errorMsg := fmt.Sprintf("insert additional value for '%s' in '%s'", name, table) + ": %w"
 

@@ -1,6 +1,6 @@
 package postgresql
 
-//TODO: need to add implementation of postre storage.
+//TODO: need to add implementation of postgre storage.
 
 //password := "user_password" // Replace with the actual password provided by the user
 //

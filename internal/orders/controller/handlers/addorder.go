@@ -73,7 +73,7 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 	}
 }
 
-// TODO: move in auth's helpers.
+// TODO: move in auths helpers.
 func getUserIDFromContext(ctx context.Context) (int64, error) {
 	userIDraw := ctx.Value(userdata.UserID)
 	if userIDraw == nil {

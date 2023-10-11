@@ -7,8 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const packageName = "orders"
-
 type Controller struct {
 	storage storage.Storage
 
