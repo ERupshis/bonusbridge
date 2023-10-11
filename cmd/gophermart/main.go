@@ -42,18 +42,17 @@ func main() {
 	storageManager, err := postgresOrders.CreatePostgreDB(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
-		return
 	}
 
 	ordersStorage := storage.Create(storageManager, log)
-	_ = controller.CreateController(ordersStorage, log)
+	ordersController := controller.CreateController(ordersStorage, log)
 
 	//controllers mounting.
 	router := chi.NewRouter()
 	//router.Mount("/", authController.Route()) TODO: main page plug.
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
-	router.Mount("/api/user/orders", authController.AuthorizeUser(chi.NewRouter(), userdata.RoleUser))
+	router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), userdata.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)
