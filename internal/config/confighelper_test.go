@@ -35,7 +35,7 @@ func TestAtoi64(t *testing.T) {
 		{
 			name: "invalid text on input",
 			args: args{
-				value: "asdd",
+				value: "add",
 			},
 			want:    0,
 			wantErr: true,

@@ -1,7 +1,14 @@
-package data
+package userdata
 
 import (
 	"fmt"
+)
+
+const UserID = "userID"
+
+const (
+	RoleUser = iota
+	RoleAdmin
 )
 
 // ErrUserNotFound missing user in database.
@@ -12,6 +19,6 @@ type User struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 
-	ID   int
+	ID   int64
 	Role int
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,11 +10,13 @@ import (
 
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
-	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
-	"github.com/erupshis/bonusbridge/internal/auth/users/managers/ram"
+	ramUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/ram"
+	"github.com/erupshis/bonusbridge/internal/auth/users/userdata"
 	"github.com/erupshis/bonusbridge/internal/config"
-	"github.com/erupshis/bonusbridge/internal/controllers"
 	"github.com/erupshis/bonusbridge/internal/logger"
+	"github.com/erupshis/bonusbridge/internal/orders/controller"
+	"github.com/erupshis/bonusbridge/internal/orders/storage"
+	postgresOrders "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -28,19 +31,29 @@ func main() {
 	}
 
 	//authentication.
-	usersStorage := ram.Create(log)
+	usersStorage := ramUsers.Create(log)
 	jwtGenerator := jwtgenerator.Create(cfg.JWTKey, 2, log)
 	authController := auth.CreateAuthenticator(usersStorage, jwtGenerator, log)
 
-	//main system.
-	mainController := controllers.Create(log)
+	ctxWithCancel, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	//orders.
+	storageManager, err := postgresOrders.CreatePostgreDB(ctxWithCancel, cfg, log)
+	if err != nil {
+		log.Info("failed to connect to orders database: %v", err)
+		return
+	}
+
+	ordersStorage := storage.Create(storageManager, log)
+	ordersController := controller.CreateController(ordersStorage, log)
 
 	//controllers mounting.
 	router := chi.NewRouter()
 	//router.Mount("/", authController.Route()) TODO: main page plug.
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
-	router.Mount("/api/user/", authController.AuthorizeUser(mainController.Route(), managers.RoleUser))
+	router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), userdata.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)

@@ -11,7 +11,7 @@ import (
 // Claims struct that keeps standard jwt claims plus custom UserID.
 type Claims struct {
 	jwt.RegisteredClaims
-	UserID int
+	UserID int64
 }
 
 // JwtGenerator generator itself.
@@ -36,7 +36,7 @@ func Create(jwtKey string, tokenExp int, baseLogger logger.BaseLogger) JwtGenera
 }
 
 // BuildJWTString creates token and returns it as string.
-func (j *JwtGenerator) BuildJWTString(userID int) (string, error) {
+func (j *JwtGenerator) BuildJWTString(userID int64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(j.tokenExp) * time.Hour)),
@@ -53,7 +53,7 @@ func (j *JwtGenerator) BuildJWTString(userID int) (string, error) {
 }
 
 // GetUserId gets token in string format, parse it and returns userID.
-func (j *JwtGenerator) GetUserId(tokenString string) int {
+func (j *JwtGenerator) GetUserId(tokenString string) int64 {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims,
 		func(t *jwt.Token) (interface{}, error) {
