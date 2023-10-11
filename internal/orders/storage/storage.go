@@ -47,8 +47,8 @@ func (s *Storage) AddOrder(ctx context.Context, number string, userID int64) err
 	}
 }
 
-func (s *Storage) GetOrders(userID int64) ([]data.Order, error) {
-	orders, err := s.manager.GetOrders(userID)
+func (s *Storage) GetOrders(ctx context.Context, userID int64) ([]data.Order, error) {
+	orders, err := s.manager.GetOrders(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get orders from storage: %w", err)
 	}

@@ -34,7 +34,7 @@ func (m *manager) AddOrder(_ context.Context, number string, userID int64) (int6
 		Number:     number,
 		UserID:     userID,
 		Status:     "NEW",
-		Accrual:    "",
+		Accrual:    0,
 		UploadedAt: time.Now(),
 	})
 	return int64(len(m.orders)), nil
@@ -51,7 +51,7 @@ func (m *manager) GetOrder(_ context.Context, number string) (*data.Order, error
 	return nil, nil
 }
 
-func (m *manager) GetOrders(userID int64) ([]data.Order, error) {
+func (m *manager) GetOrders(_ context.Context, userID int64) ([]data.Order, error) {
 	m.mu.RLock()
 	orders := make([]data.Order, 0)
 	for _, order := range m.orders {

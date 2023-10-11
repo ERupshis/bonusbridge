@@ -150,40 +150,33 @@ func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, 
 
 	return &orders[0], nil
 }
-func (p *postgresDB) GetOrders(userID int64) ([]data.Order, error) {
-	return nil, nil
-}
-
-/*
-
-
-// SelectPersons returns persons from database satisfying to filters. Supports result pagination.
-func (p *postgresDB) SelectPersons(ctx context.Context, filters map[string]interface{}, pageNum int64, pageSize int64) ([]datastructs.PersonData, error) {
+func (p *postgresDB) GetOrders(ctx context.Context, userID int64) ([]data.Order, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[postgresDB:SelectPersons] start transaction")
-	errorMessage := "select persons in db: %w"
+	p.log.Info("[postgresDB:GetOrders] start transaction")
+	errMsg := "select orders in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
-		return []datastructs.PersonData{}, fmt.Errorf(errorMessage, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	persons, err := p.handler.SelectPersons(ctx, tx, filters, pageNum, pageSize)
+	orders, err := p.handler.SelectOrders(ctx, tx, map[string]interface{}{"user_id": userID})
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return []datastructs.PersonData{}, fmt.Errorf(errorMessage, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return []datastructs.PersonData{}, fmt.Errorf(errorMessage, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	p.log.Info("[postgresDB:SelectPersons] transaction successful")
-	return persons, nil
+	p.log.Info("[postgresDB:GetOrders] transaction successful")
+	return orders, nil
 }
 
+/*
 // DeletePersonById deletes person by id.
 func (p *postgresDB) DeletePersonById(ctx context.Context, personId int64) (int64, error) {
 	//TODO: avoid real deletion from DB. Need to add new attr 'isDeleted' and mark on deleted elements.
