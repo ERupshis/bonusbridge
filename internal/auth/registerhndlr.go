@@ -26,7 +26,7 @@ func (c *Controller) registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := c.usersStrg.GetUserId(user.Login)
+	userID, err := c.usersStrg.GetUserID(user.Login)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		c.log.Info("[controller:registerHandler] failed to check user in database")

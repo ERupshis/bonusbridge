@@ -32,7 +32,7 @@ func (s *Storage) AddUser(login string, password string) (int64, error) {
 
 	user, err := s.getUser(login)
 	if err != nil {
-		if errors.As(err, &userdata.ErrUserNotFound) {
+		if errors.Is(err, userdata.ErrUserNotFound) {
 			return -1, nil
 		}
 
@@ -42,10 +42,10 @@ func (s *Storage) AddUser(login string, password string) (int64, error) {
 	return user.ID, nil
 }
 
-func (s *Storage) GetUserId(login string) (int64, error) {
+func (s *Storage) GetUserID(login string) (int64, error) {
 	user, err := s.getUser(login)
 	if err != nil {
-		if errors.As(err, &userdata.ErrUserNotFound) {
+		if errors.Is(err, userdata.ErrUserNotFound) {
 			return -1, nil
 		}
 
@@ -58,7 +58,7 @@ func (s *Storage) GetUserId(login string) (int64, error) {
 func (s *Storage) GetUserRole(userID int64) (int, error) {
 	user, err := s.getUserByID(userID)
 	if err != nil {
-		if errors.As(err, &userdata.ErrUserNotFound) {
+		if errors.Is(err, userdata.ErrUserNotFound) {
 			return -1, nil
 		}
 

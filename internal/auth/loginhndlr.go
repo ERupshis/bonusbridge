@@ -26,7 +26,7 @@ func (c *Controller) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := c.usersStrg.GetUserId(user.Login)
+	userID, err := c.usersStrg.GetUserID(user.Login)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		c.log.Info("[controller:loginHandler] failed to get userID from user's database: %w", err)

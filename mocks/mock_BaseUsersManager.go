@@ -51,7 +51,7 @@ func (mr *MockBaseUsersManagerMockRecorder) AddUser(arg0, arg1 interface{}) *gom
 // GetUserId mocks base method.
 func (m *MockBaseUsersManager) GetUserId(arg0 string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserId", arg0)
+	ret := m.ctrl.Call(m, "GetUserID", arg0)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -60,7 +60,7 @@ func (m *MockBaseUsersManager) GetUserId(arg0 string) (int, error) {
 // GetUserId indicates an expected call of GetUserId.
 func (mr *MockBaseUsersManagerMockRecorder) GetUserId(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserId", reflect.TypeOf((*MockBaseUsersManager)(nil).GetUserId), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserID", reflect.TypeOf((*MockBaseUsersManager)(nil).GetUserId), arg0)
 }
 
 // GetUserRole mocks base method.
