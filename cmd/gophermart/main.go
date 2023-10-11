@@ -46,7 +46,7 @@ func main() {
 	}
 
 	ordersStorage := storage.Create(storageManager, log)
-	_ := controller.CreateController(ordersStorage, log)
+	_ = controller.CreateController(ordersStorage, log)
 
 	//controllers mounting.
 	router := chi.NewRouter()
