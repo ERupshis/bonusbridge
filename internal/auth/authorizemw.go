@@ -29,7 +29,7 @@ func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http
 			return
 		}
 
-		userID := c.jwt.GetUserId(token[1])
+		userID := c.jwt.GetUserID(token[1])
 		userRole, err := c.usersStrg.GetUserRole(userID)
 		if err != nil {
 			c.log.Info("[%s:controller:AuthorizeUser] failed to search user in system: %v", packageName, err)

@@ -52,8 +52,8 @@ func (j *JwtGenerator) BuildJWTString(userID int64) (string, error) {
 	return tokenString, nil
 }
 
-// GetUserId gets token in string format, parse it and returns userID.
-func (j *JwtGenerator) GetUserId(tokenString string) int64 {
+// GetUserID gets token in string format, parse it and returns userID.
+func (j *JwtGenerator) GetUserID(tokenString string) int64 {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims,
 		func(t *jwt.Token) (interface{}, error) {

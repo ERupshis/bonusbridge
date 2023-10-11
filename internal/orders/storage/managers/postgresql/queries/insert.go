@@ -23,7 +23,7 @@ func InsertOrder(ctx context.Context, tx *sql.Tx, orderData *data.Order, log log
 	}
 	defer helpers.ExecuteWithLogError(stmt.Close, log)
 
-	newPersonId := int64(0)
+	newOrderID := int64(0)
 	query := func(context context.Context) error {
 		_, err := stmt.ExecContext(
 			context,
@@ -41,7 +41,7 @@ func InsertOrder(ctx context.Context, tx *sql.Tx, orderData *data.Order, log log
 		return -1, fmt.Errorf(errorMsg, err)
 	}
 
-	return newPersonId, nil
+	return newOrderID, nil
 }
 
 // createInsertPersonStmt generates statement for insert query.
