@@ -11,7 +11,7 @@ import (
 
 //TODO: split in independent package.
 
-type contextString string
+type ContextString string
 
 func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +49,7 @@ func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http
 			return
 		}
 
-		ctxWithValue := context.WithValue(r.Context(), contextString(userdata.UserID), fmt.Sprintf("%d", userID))
+		ctxWithValue := context.WithValue(r.Context(), ContextString(userdata.UserID), fmt.Sprintf("%d", userID))
 		h.ServeHTTP(w, r.WithContext(ctxWithValue))
 	})
 }
