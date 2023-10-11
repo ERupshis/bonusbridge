@@ -39,8 +39,7 @@ func main() {
 	defer cancel()
 
 	//orders.
-	ordersHandler := postgresOrders.CreateHandler(log)
-	storageManager, err := postgresOrders.CreatePostgreDB(ctxWithCancel, cfg, ordersHandler, log)
+	storageManager, err := postgresOrders.CreatePostgreDB(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
 		return

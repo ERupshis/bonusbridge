@@ -14,6 +14,8 @@ import (
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
+	dbData "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/data"
+	"github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/queries"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -25,14 +27,13 @@ import (
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
 	database *sql.DB
-	handler  QueriesHandler
 
 	log logger.BaseLogger
 	mu  sync.RWMutex
 }
 
 // CreatePostgreDB creates manager implementation. Supports migrations and check connection to database.
-func CreatePostgreDB(ctx context.Context, cfg config.Config, queriesHandler QueriesHandler, log logger.BaseLogger) (managers.BaseStorageManager, error) {
+func CreatePostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseStorageManager, error) {
 	log.Info("[CreatePostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
@@ -57,7 +58,6 @@ func CreatePostgreDB(ctx context.Context, cfg config.Config, queriesHandler Quer
 
 	manager := &postgresDB{
 		database: database,
-		handler:  queriesHandler,
 		log:      log,
 	}
 
@@ -74,7 +74,7 @@ func (p *postgresDB) CheckConnection(ctx context.Context) (bool, error) {
 	exec := func(context context.Context) (int64, []byte, error) {
 		return 0, []byte{}, p.database.PingContext(context)
 	}
-	_, _, err := retryer.RetryCallWithTimeout(ctx, p.log, nil, databaseErrorsToRetry, exec)
+	_, _, err := retryer.RetryCallWithTimeout(ctx, p.log, nil, dbData.DatabaseErrorsToRetry, exec)
 	if err != nil {
 		return false, fmt.Errorf("check connection: %w", err)
 	}
@@ -104,7 +104,7 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 		return -1, fmt.Errorf(errMsg, err)
 	}
 
-	id, err := p.handler.InsertOrder(ctx, tx, newOrder)
+	id, err := queries.InsertOrder(ctx, tx, newOrder, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return -1, fmt.Errorf(errMsg, err)
@@ -130,7 +130,7 @@ func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, 
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	orders, err := p.handler.SelectOrders(ctx, tx, map[string]interface{}{"number": number})
+	orders, err := queries.SelectOrders(ctx, tx, map[string]interface{}{"number": number}, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
@@ -161,7 +161,7 @@ func (p *postgresDB) GetOrders(ctx context.Context, userID int64) ([]data.Order,
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	orders, err := p.handler.SelectOrders(ctx, tx, map[string]interface{}{"user_id": userID})
+	orders, err := queries.SelectOrders(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
