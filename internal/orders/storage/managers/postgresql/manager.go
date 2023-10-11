@@ -46,7 +46,7 @@ func CreatePostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogg
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file://db/migrations/orders", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file://db/migrations/", "postgres", driver)
 	if err != nil {
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
