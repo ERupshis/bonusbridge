@@ -32,9 +32,9 @@ type postgresDB struct {
 	mu  sync.RWMutex
 }
 
-// CreatePostgreDB creates manager implementation. Supports migrations and check connection to database.
-func CreatePostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseStorageManager, error) {
-	log.Info("[CreatePostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
+// CreateOrdersPostgreDB creates manager implementation. Supports migrations and check connection to database.
+func CreateOrdersPostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseStorageManager, error) {
+	log.Info("[CreateOrdersPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
 	if err != nil {
@@ -65,7 +65,7 @@ func CreatePostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogg
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
 
-	log.Info("[CreatePostgreDB] successful")
+	log.Info("[CreateOrdersPostgreDB] successful")
 	return manager, nil
 }
 

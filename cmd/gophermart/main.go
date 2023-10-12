@@ -11,7 +11,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
-	ramUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/ram"
+	postgresUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/controller"
@@ -30,16 +30,20 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to create logger: %v", err)
 	}
 
-	//authentication.
-	usersStorage := ramUsers.Create(log)
-	jwtGenerator := jwtgenerator.Create(cfg.JWTKey, 2, log)
-	authController := auth.CreateAuthenticator(usersStorage, jwtGenerator, log)
-
 	ctxWithCancel, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	//authentication.
+	usersStorage, err := postgresUsers.CreateUsersPostgreDB(ctxWithCancel, cfg, log)
+	if err != nil {
+		log.Info("failed to connect to users database: %v", err)
+	}
+
+	jwtGenerator := jwtgenerator.Create(cfg.JWTKey, 2, log)
+	authController := auth.CreateAuthenticator(usersStorage, jwtGenerator, log)
+
 	//orders.
-	storageManager, err := postgresOrders.CreatePostgreDB(ctxWithCancel, cfg, log)
+	storageManager, err := postgresOrders.CreateOrdersPostgreDB(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
 	}
