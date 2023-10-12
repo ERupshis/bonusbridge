@@ -22,16 +22,17 @@ func Register(usersStorage managers.BaseUsersManager, jwt jwtgenerator.JwtGenera
 		defer helpers.ExecuteWithLogError(r.Body.Close, log)
 
 		var user data.User
+		user.Role = data.RoleUser
 		if err := helpers.UnmarshalData(buf.Bytes(), &user); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			log.Info("[auth:handlers:Register] bad new user input data")
+			log.Info("[auth:handlers:Register] bad new user input data: %v", err)
 			return
 		}
 
-		userID, err := usersStorage.GetUserID(user.Login)
+		userID, err := usersStorage.GetUserID(r.Context(), user.Login)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Info("[auth:handlers:Register] failed to check user in database")
+			log.Info("[auth:handlers:Register] failed to check user in database: %v", err)
 			return
 		}
 
@@ -41,17 +42,17 @@ func Register(usersStorage managers.BaseUsersManager, jwt jwtgenerator.JwtGenera
 			return
 		}
 
-		userID, err = usersStorage.AddUser(user.Login, user.Password)
+		userID, err = usersStorage.AddUser(r.Context(), &user)
 		if err != nil || userID == -1 {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Info("[auth:handlers:Register] failed to add new user '%s'", user.Login)
+			log.Info("[auth:handlers:Register] failed to add new user '%s': %v", user.Login, err)
 			return
 		}
 
 		token, err := jwt.BuildJWTString(userID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Info("[auth:handlers:Register] new token generation failed: %w", err)
+			log.Info("[auth:handlers:Register] new token generation failed: %v", err)
 			return
 		}
 

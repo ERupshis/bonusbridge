@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
+	"github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql/queries"
 	"github.com/erupshis/bonusbridge/internal/config"
+	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	dbData "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/retryer"
@@ -19,10 +22,10 @@ import (
 // postgresDB storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
+	mu       sync.RWMutex
 	database *sql.DB
 
 	log logger.BaseLogger
-	mu  sync.RWMutex
 }
 
 // CreateUsersPostgreDB creates manager implementation. Supports migrations and check connection to database.
@@ -79,20 +82,117 @@ func (p *postgresDB) Close() error {
 	return p.database.Close()
 }
 
-func (p *postgresDB) AddUser(login string, password string) (int64, error) {
-	return -1, nil
+func (p *postgresDB) AddUser(ctx context.Context, user *data.User) (int64, error) {
+	p.mu.Lock()
+
+	p.log.Info("[users:postgresDB:AddUser] start transaction")
+	errMsg := "add user in db: %w"
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return -1, fmt.Errorf(errMsg, err)
+	}
+
+	err = queries.InsertUser(ctx, tx, user, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return -1, fmt.Errorf(errMsg, err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return -1, fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[users:postgresDB:AddUser] transaction successful")
+	p.mu.Unlock()
+	return p.GetUserID(ctx, user.Login)
 }
 
-func (p *postgresDB) GetUserID(login string) (int64, error) {
-	return -1, nil
+func (p *postgresDB) GetUser(ctx context.Context, login string) (*data.User, error) {
+	user, err := p.getUser(ctx, map[string]interface{}{"login": login})
+	if err != nil {
+		return nil, fmt.Errorf("get user: %w", err)
+	}
+
+	if user == nil {
+		return nil, nil
+	}
+
+	return user, nil
 }
 
-func (p *postgresDB) GetUserRole(userID int64) (int, error) {
-	return -1, nil
+func (p *postgresDB) GetUserID(ctx context.Context, login string) (int64, error) {
+	user, err := p.getUser(ctx, map[string]interface{}{"login": login})
+	if err != nil {
+		return -1, fmt.Errorf("get user ID: %w", err)
+	}
+
+	if user == nil {
+		return -1, nil
+	}
+
+	return user.ID, nil
 }
 
-func (p *postgresDB) ValidateUser(login string, password string) (bool, error) {
-	return false, nil
+func (p *postgresDB) GetUserRole(ctx context.Context, userID int64) (int, error) {
+	user, err := p.getUser(ctx, map[string]interface{}{"id": userID})
+	if err != nil {
+		return -1, fmt.Errorf("get user role: %w", err)
+	}
+
+	if user == nil {
+		return -1, nil
+	}
+
+	return user.Role, nil
+}
+
+//func (p *postgresDB) ValidateUser(ctx context.Context, login string, password string) (bool, error) {
+//	user, err := p.getUser(ctx, map[string]interface{}{"login": login})
+//	if err != nil {
+//		return false, fmt.Errorf("validate user: %w", err)
+//	}
+//
+//	if user == nil {
+//		return false, fmt.Errorf("validate user: user not found")
+//	}
+//
+//	return password == user.Password, nil
+//}
+
+func (p *postgresDB) getUser(ctx context.Context, filters map[string]interface{}) (*data.User, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	p.log.Info("[users:postgresDB:getUser] start transaction")
+	errMsg := "get user: %w"
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	users, err := queries.SelectUsers(ctx, tx, filters, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	if len(users) > 1 {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return nil, fmt.Errorf("user is not found in db or few users has the same login")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[users:postgresDB:getUser] transaction successful")
+
+	if len(users) == 0 {
+		return nil, nil
+	}
+	return &users[0], nil
 }
 
 //password := "user_password" // Replace with the actual password provided by the user

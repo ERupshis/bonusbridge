@@ -49,6 +49,7 @@ func (j *JwtGenerator) BuildJWTString(userID int64) (string, error) {
 		return "", err
 	}
 
+	j.log.Info("[jwtgenerator:BuildJWTString] created JWT token for userID '%d'", userID)
 	return tokenString, nil
 }
 
@@ -67,10 +68,10 @@ func (j *JwtGenerator) GetUserID(tokenString string) int64 {
 	}
 
 	if !token.Valid {
-		j.log.Info("Token is not valid")
+		j.log.Info("[jwtgenerator:GetUserID] Token is not valid")
 		return -1
 	}
 
-	j.log.Info("Token os valid")
+	j.log.Info("[jwtgenerator:GetUserID] Token os valid")
 	return claims.UserID
 }

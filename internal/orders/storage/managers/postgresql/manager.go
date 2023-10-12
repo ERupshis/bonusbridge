@@ -26,10 +26,10 @@ import (
 // postgresDB storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
+	mu       sync.RWMutex
 	database *sql.DB
 
 	log logger.BaseLogger
-	mu  sync.RWMutex
 }
 
 // CreateOrdersPostgreDB creates manager implementation. Supports migrations and check connection to database.

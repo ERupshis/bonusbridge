@@ -1,6 +1,7 @@
 package ram
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -27,9 +28,35 @@ func Create(baseLogger logger.BaseLogger) managers.BaseUsersManager {
 	}
 }
 
-func (s *Storage) AddUser(login string, password string) (int64, error) {
-	s.users = append(s.users, data.User{ID: int64(len(s.users)), Login: login, Password: password, Role: data.RoleUser})
+func (s *Storage) AddUser(_ context.Context, user *data.User) (int64, error) {
+	s.users = append(s.users, data.User{ID: int64(len(s.users)), Login: user.Login, Password: user.Password, Role: data.RoleUser})
 
+	userInDB, err := s.getUser(user.Login)
+	if err != nil {
+		if errors.Is(err, data.ErrUserNotFound) {
+			return -1, nil
+		}
+
+		return -1, err
+	}
+
+	return userInDB.ID, nil
+}
+
+func (s *Storage) GetUser(_ context.Context, login string) (*data.User, error) {
+	user, err := s.getUser(login)
+	if err != nil {
+		if errors.Is(err, data.ErrUserNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (s *Storage) GetUserID(_ context.Context, login string) (int64, error) {
 	user, err := s.getUser(login)
 	if err != nil {
 		if errors.Is(err, data.ErrUserNotFound) {
@@ -42,20 +69,7 @@ func (s *Storage) AddUser(login string, password string) (int64, error) {
 	return user.ID, nil
 }
 
-func (s *Storage) GetUserID(login string) (int64, error) {
-	user, err := s.getUser(login)
-	if err != nil {
-		if errors.Is(err, data.ErrUserNotFound) {
-			return -1, nil
-		}
-
-		return -1, err
-	}
-
-	return user.ID, nil
-}
-
-func (s *Storage) GetUserRole(userID int64) (int, error) {
+func (s *Storage) GetUserRole(_ context.Context, userID int64) (int, error) {
 	user, err := s.getUserByID(userID)
 	if err != nil {
 		if errors.Is(err, data.ErrUserNotFound) {
@@ -68,8 +82,7 @@ func (s *Storage) GetUserRole(userID int64) (int, error) {
 	return user.Role, nil
 }
 
-func (s *Storage) ValidateUser(login string, password string) (bool, error) {
-	//TODO: need implement hash with asymmetric keys
+func (s *Storage) ValidateUser(_ context.Context, login string, password string) (bool, error) {
 	user, err := s.getUser(login)
 	if err != nil {
 		return false, fmt.Errorf("validate user: %w", err)

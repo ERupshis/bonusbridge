@@ -53,7 +53,7 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 		err = strg.AddOrder(r.Context(), orderNumber, userID)
 		if err != nil {
 			if errors.Is(err, storage.ErrOrderWasAddedBefore) {
-				log.Info("[%s:AddOrderHandler] order '%s' has been already added by this user before", packageName, orderNumber, userID)
+				log.Info("[%s:AddOrderHandler] order '%s' has been already added by this user before", packageName, orderNumber)
 				w.WriteHeader(http.StatusOK)
 				return
 			}

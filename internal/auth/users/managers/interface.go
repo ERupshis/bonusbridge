@@ -1,9 +1,16 @@
 package managers
 
+import (
+	"context"
+
+	"github.com/erupshis/bonusbridge/internal/auth/users/data"
+)
+
 //go:generate mockgen -destination=../../../../mocks/mock_BaseUsersManager.go -package=mocks github.com/erupshis/bonusbridge/internal/auth/users/managers BaseUsersManager
 type BaseUsersManager interface {
-	AddUser(login string, password string) (int64, error)
-	GetUserID(login string) (int64, error)
-	GetUserRole(userID int64) (int, error)
-	ValidateUser(login string, password string) (bool, error)
+	AddUser(ctx context.Context, user *data.User) (int64, error)
+	GetUser(ctx context.Context, login string) (*data.User, error)
+	GetUserID(ctx context.Context, login string) (int64, error)
+	GetUserRole(ctx context.Context, userID int64) (int, error)
+	//ValidateUser(ctx context.Context, login string, password string) (bool, error)
 }

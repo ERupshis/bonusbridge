@@ -7,7 +7,7 @@ import (
 const UserID = "userID"
 
 const (
-	RoleUser = iota
+	RoleUser = iota + 1
 	RoleAdmin
 )
 

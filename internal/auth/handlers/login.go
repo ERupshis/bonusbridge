@@ -24,37 +24,30 @@ func Login(usersStorage managers.BaseUsersManager, jwt jwtgenerator.JwtGenerator
 		var user data.User
 		if err := helpers.UnmarshalData(buf.Bytes(), &user); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			log.Info("[auth:handlers:Login] bad new user input data")
+			log.Info("[auth:handlers:Login] bad new user input data: %v", err)
 			return
 		}
 
-		userID, err := usersStorage.GetUserID(user.Login)
+		userDB, err := usersStorage.GetUser(r.Context(), user.Login)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Info("[auth:handlers:Login] failed to get userID from user's database: %w", err)
+			log.Info("[auth:handlers:Login] failed to get userID from user's database: %v", err)
 			return
 		}
 
-		if userID == -1 {
+		if userDB == nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			log.Info("[auth:handlers:Login] failed to get userID from user's database: %w", err)
+			log.Info("[auth:handlers:Login] failed to get userID from user's database: %v", err)
 			return
 		}
 
-		authorized, err := usersStorage.ValidateUser(user.Login, user.Password)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Info("[auth:handlers:Login] failed to check user's login/password in database")
-			return
-		}
-
-		if !authorized {
+		if user.Password != userDB.Password {
 			w.WriteHeader(http.StatusUnauthorized)
 			log.Info("[auth:handlers:Login] failed to authorize user")
 			return
 		}
 
-		token, err := jwt.BuildJWTString(userID)
+		token, err := jwt.BuildJWTString(userDB.ID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Info("[auth:handlers:Login] new token generation failed: %w", err)

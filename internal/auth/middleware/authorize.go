@@ -31,7 +31,7 @@ func AuthorizeUser(h http.Handler, userRoleRequirement int, usersStorage manager
 		}
 
 		userID := jwt.GetUserID(token[1])
-		userRole, err := usersStorage.GetUserRole(userID)
+		userRole, err := usersStorage.GetUserRole(r.Context(), userID)
 		if err != nil {
 			log.Info("[auth:middleware:Authorize] failed to search user in system: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
