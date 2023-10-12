@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/erupshis/bonusbridge/internal/auth"
-	"github.com/erupshis/bonusbridge/internal/auth/users/userdata"
+	"github.com/erupshis/bonusbridge/internal/auth/middleware"
+	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/storage"
@@ -76,7 +76,7 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 
 // TODO: move in auths helpers.
 func getUserIDFromContext(ctx context.Context) (int64, error) {
-	userIDraw := ctx.Value(auth.ContextString(userdata.UserID))
+	userIDraw := ctx.Value(middleware.ContextString(data.UserID))
 	if userIDraw == nil {
 		return -1, fmt.Errorf("missing userID in request's context")
 	}

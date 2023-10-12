@@ -11,7 +11,7 @@ import (
 // Config server's settings.
 type Config struct {
 	AccrualAddr string // AccrualAddr accrual system address.
-	DatabaseDSN string // DatabaseDSN PostgreSQL userdata source name.
+	DatabaseDSN string // DatabaseDSN PostgreSQL data source name.
 	HostAddr    string // Host server's address.
 	JWTKey      string // jwt web token generation key.
 }

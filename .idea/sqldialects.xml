@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
-    <file url="file://$PROJECT_DIR$/db/migrations/orders/000001_orders.down.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/db/migrations/orders/000001_orders.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db/migrations/000001_orders.down.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db/migrations/000001_orders.up.sql" dialect="PostgreSQL" />
   </component>
 </project>

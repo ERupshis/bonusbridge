@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS users.roles
 );
 
 INSERT INTO users.roles(role_id)
-VALUES ('ADMIN'),
-       ('USER');
+VALUES ('USER'),
+       ('ADMIN');
 
 --USERS IMPLEMENTATION
 CREATE TABLE IF NOT EXISTS users.users
@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS users.users
     password VARCHAR(60) NOT NULL,
     role_id SMALLINT NOT NULL
 );
+
+INSERT INTO users.users(login, password, role_id)
+VALUES ('u1', 'p1', 1);
 
 
 --ORDERS
