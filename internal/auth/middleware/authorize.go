@@ -12,8 +12,6 @@ import (
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
 
-//TODO: split in independent package.
-
 type ContextString string
 
 func AuthorizeUser(h http.Handler, userRoleRequirement int, usersStorage managers.BaseUsersManager, jwt jwtgenerator.JwtGenerator, log logger.BaseLogger) http.Handler {
