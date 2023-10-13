@@ -34,6 +34,7 @@ func Insert(ctx context.Context, tx *sql.Tx, withdrawal *data.Withdrawal, log lo
 			withdrawal.UserID,
 			withdrawal.Order,
 			withdrawal.Sum,
+			withdrawal.ProcessedAt,
 		)
 
 		return err

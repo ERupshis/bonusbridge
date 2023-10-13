@@ -22,14 +22,14 @@ import (
 // postgresDB storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
-	mu       sync.RWMutex
+	mu       *sync.RWMutex
 	database *sql.DB
 
 	log logger.BaseLogger
 }
 
 // CreateUsersPostgreDB creates manager implementation. Supports migrations and check connection to database.
-func CreateUsersPostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseUsersManager, error) {
+func CreateUsersPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseUsersManager, error) {
 	log.Info("[CreateUsersPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
@@ -54,6 +54,7 @@ func CreateUsersPostgreDB(ctx context.Context, cfg config.Config, log logger.Bas
 
 	manager := &postgresDB{
 		database: database,
+		mu:       mu,
 		log:      log,
 	}
 
@@ -146,19 +147,6 @@ func (p *postgresDB) GetUserRole(ctx context.Context, userID int64) (int, error)
 
 	return user.Role, nil
 }
-
-//func (p *postgresDB) ValidateUser(ctx context.Context, login string, password string) (bool, error) {
-//	user, err := p.getUser(ctx, map[string]interface{}{"login": login})
-//	if err != nil {
-//		return false, fmt.Errorf("validate user: %w", err)
-//	}
-//
-//	if user == nil {
-//		return false, fmt.Errorf("validate user: user not found")
-//	}
-//
-//	return password == user.Password, nil
-//}
 
 func (p *postgresDB) getUser(ctx context.Context, filters map[string]interface{}) (*data.User, error) {
 	p.mu.RLock()

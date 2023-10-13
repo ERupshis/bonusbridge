@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/bonuses/data"
@@ -45,6 +46,7 @@ func Withdraw(strg storage.Storage, log logger.BaseLogger) http.HandlerFunc {
 		}
 
 		withdrawal.UserID = userID
+		withdrawal.ProcessedAt = time.Now()
 		if err = strg.WithdrawBonuses(r.Context(), &withdrawal); err != nil {
 			if errors.Is(err, storage.ErrNotEnoughBonuses) {
 				w.WriteHeader(http.StatusPaymentRequired)

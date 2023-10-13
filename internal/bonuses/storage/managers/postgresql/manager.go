@@ -26,14 +26,14 @@ import (
 // postgresDB storageManager implementation for PostgreSQL. Consist of database.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
-	mu       sync.RWMutex
+	mu       *sync.RWMutex
 	database *sql.DB
 
 	log logger.BaseLogger
 }
 
 // CreateBonusesPostgreDB creates manager implementation. Supports migrations and check connection to database.
-func CreateBonusesPostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseBonusesManager, error) {
+func CreateBonusesPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseBonusesManager, error) {
 	log.Info("[CreateBonusesPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
@@ -58,6 +58,7 @@ func CreateBonusesPostgreDB(ctx context.Context, cfg config.Config, log logger.B
 
 	manager := &postgresDB{
 		database: database,
+		mu:       mu,
 		log:      log,
 	}
 

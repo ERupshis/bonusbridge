@@ -26,14 +26,14 @@ import (
 // postgresDB storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
-	mu       sync.RWMutex
+	mu       *sync.RWMutex
 	database *sql.DB
 
 	log logger.BaseLogger
 }
 
 // CreateOrdersPostgreDB creates manager implementation. Supports migrations and check connection to database.
-func CreateOrdersPostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseOrdersManager, error) {
+func CreateOrdersPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseOrdersManager, error) {
 	log.Info("[CreateOrdersPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
@@ -58,6 +58,7 @@ func CreateOrdersPostgreDB(ctx context.Context, cfg config.Config, log logger.Ba
 
 	manager := &postgresDB{
 		database: database,
+		mu:       mu,
 		log:      log,
 	}
 
@@ -175,102 +176,3 @@ func (p *postgresDB) GetOrders(ctx context.Context, userID int64) ([]data.Order,
 	p.log.Info("[postgresDB:GetOrders] transaction successful")
 	return orders, nil
 }
-
-/*
-// DeletePersonById deletes person by id.
-func (p *postgresDB) DeletePersonById(ctx context.Context, personId int64) (int64, error) {
-	//TODO: avoid real deletion from DB. Need to add new attr 'isDeleted' and mark on deleted elements.
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.log.Info("[postgresDB:DeletePerson] start transaction")
-	errorMessage := "delete person in db: %w"
-	tx, err := p.database.BeginTx(ctx, nil)
-	if err != nil {
-		return 0, fmt.Errorf(errorMessage, err)
-	}
-
-	affectedCount, err := p.handler.DeletePerson(ctx, tx, personId)
-	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return 0, fmt.Errorf(errorMessage, err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return 0, fmt.Errorf(errorMessage, err)
-	}
-
-	p.log.Info("[postgresDB:DeletePerson] transaction successful")
-
-	return affectedCount, nil
-}
-
-// UpdatePersonById updates person by id.
-func (p *postgresDB) UpdatePersonById(ctx context.Context, id int64, values map[string]interface{}) (int64, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.log.Info("[postgresDB:UpdatePartiallyPersonById] start transaction")
-	errorMessage := "update person partially in db: %w"
-	tx, err := p.database.BeginTx(ctx, nil)
-	if err != nil {
-		return 0, fmt.Errorf(errorMessage, err)
-	}
-
-	err = p.replaceRefValues(ctx, tx, values)
-	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return 0, fmt.Errorf(errorMessage, err)
-	}
-
-	affectedCount, err := p.handler.UpdateBonusesById(ctx, tx, id, values)
-	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return 0, fmt.Errorf(errorMessage, err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return 0, fmt.Errorf(errorMessage, err)
-	}
-
-	p.log.Info("[postgresDB:UpdatePartiallyPersonById] transaction successful")
-	return affectedCount, nil
-}
-
-// replaceRefValues makes substitution of referenced values in request to foreign key name.
-func (p *postgresDB) replaceRefValues(ctx context.Context, tx *sql.Tx, values map[string]interface{}) error {
-	valuesToReplace := []struct {
-		name  string
-		table string
-	}{
-		{
-			name:  "gender",
-			table: GendersTable,
-		},
-		{
-			name:  "country",
-			table: CountriesTable,
-		},
-	}
-
-	errorMessage := "replace reference fields in db: %w"
-	for _, value := range valuesToReplace {
-		if incomingVal, ok := values[value.name]; ok {
-			incomingVal := helpers.InterfaceToString(incomingVal)
-
-			valId, err := p.handler.GetAdditionalId(ctx, tx, incomingVal, value.table)
-			if err != nil {
-				helpers.ExecuteWithLogError(tx.Rollback, p.log)
-				return fmt.Errorf(errorMessage, err)
-			}
-
-			delete(values, value.name)
-			values[value.name+"_id"] = strconv.FormatInt(valId, 10)
-		}
-	}
-
-	return nil
-}
-*/
