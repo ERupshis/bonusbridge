@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+//go:generate easyjson -all data.go
 type Balance struct {
 	ID        int64   `json:"-"`
 	UserID    int64   `json:"-"`

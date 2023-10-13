@@ -41,7 +41,7 @@ func easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalOrdersData(in *jl
 		case "status":
 			out.Status = string(in.String())
 		case "accrual":
-			out.Accrual = int(in.Int())
+			out.Accrual = float32(in.Float32())
 		case "uploaded_at":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.UploadedAt).UnmarshalJSON(data))
@@ -78,7 +78,7 @@ func easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalOrdersData(out *j
 	if in.Accrual != 0 {
 		const prefix string = ",\"accrual\":"
 		out.RawString(prefix)
-		out.Int(int(in.Accrual))
+		out.Float32(float32(in.Accrual))
 	}
 	{
 		const prefix string = ",\"uploaded_at\":"

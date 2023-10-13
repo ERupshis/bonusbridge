@@ -94,7 +94,7 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 		Number:     number,
 		UserID:     userID,
 		Status:     "NEW",
-		Accrual:    0,
+		Accrual:    0.0,
 		UploadedAt: time.Now(),
 	}
 
