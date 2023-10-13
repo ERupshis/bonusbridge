@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/erupshis/bonusbridge/internal/config"
+	"github.com/erupshis/bonusbridge/internal/dberrors"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
-	dbData "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/queries"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 	"github.com/golang-migrate/migrate/v4"
@@ -33,7 +33,7 @@ type postgresDB struct {
 }
 
 // CreateOrdersPostgreDB creates manager implementation. Supports migrations and check connection to database.
-func CreateOrdersPostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseStorageManager, error) {
+func CreateOrdersPostgreDB(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseOrdersManager, error) {
 	log.Info("[CreateOrdersPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
@@ -74,7 +74,7 @@ func (p *postgresDB) CheckConnection(ctx context.Context) (bool, error) {
 	exec := func(context context.Context) (int64, []byte, error) {
 		return 0, []byte{}, p.database.PingContext(context)
 	}
-	_, _, err := retryer.RetryCallWithTimeout(ctx, p.log, nil, dbData.DatabaseErrorsToRetry, exec)
+	_, _, err := retryer.RetryCallWithTimeout(ctx, p.log, nil, dberrors.DatabaseErrorsToRetry, exec)
 	if err != nil {
 		return false, fmt.Errorf("check connection: %w", err)
 	}

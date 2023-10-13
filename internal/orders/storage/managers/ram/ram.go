@@ -18,7 +18,7 @@ type manager struct {
 	log logger.BaseLogger
 }
 
-func Create(baseLogger logger.BaseLogger) managers.BaseStorageManager {
+func Create(baseLogger logger.BaseLogger) managers.BaseOrdersManager {
 	baseLogger.Info("[ram:Create] ram storage created")
 	return &manager{
 		log:    baseLogger,

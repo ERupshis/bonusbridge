@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/erupshis/bonusbridge/internal/dberrors"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
@@ -44,7 +43,7 @@ func SelectOrders(ctx context.Context, tx *sql.Tx, filters map[string]interface{
 
 		return err
 	}
-	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dberrors.DatabaseErrorsToRetry, query)
+	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dbData.DatabaseErrorsToRetry, query)
 	if err != nil {
 		return nil, fmt.Errorf(errorMsg, err)
 	}

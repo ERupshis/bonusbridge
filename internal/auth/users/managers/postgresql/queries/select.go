@@ -8,9 +8,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	dbUsersData "github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql/data"
+	"github.com/erupshis/bonusbridge/internal/dberrors"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
-	dbOrdersData "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
@@ -44,7 +44,7 @@ func SelectUsers(ctx context.Context, tx *sql.Tx, filters map[string]interface{}
 
 		return err
 	}
-	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dbOrdersData.DatabaseErrorsToRetry, query)
+	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dberrors.DatabaseErrorsToRetry, query)
 	if err != nil {
 		return nil, fmt.Errorf(errorMsg, err)
 	}
