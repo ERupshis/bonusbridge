@@ -1,8 +1,8 @@
-package controller
+package orders
 
 import (
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/orders/controller/handlers"
+	handlers2 "github.com/erupshis/bonusbridge/internal/orders/handlers"
 	"github.com/erupshis/bonusbridge/internal/orders/storage"
 	"github.com/go-chi/chi/v5"
 )
@@ -22,7 +22,7 @@ func CreateController(storage storage.Storage, baseLogger logger.BaseLogger) Con
 
 func (c *Controller) Route() *chi.Mux {
 	r := chi.NewRouter()
-	r.Post("/", handlers.AddOrderHandler(c.storage, c.log))
-	r.Get("/", handlers.GetOrdersHandler(c.storage, c.log))
+	r.Post("/", handlers2.AddOrderHandler(c.storage, c.log))
+	r.Get("/", handlers2.GetOrdersHandler(c.storage, c.log))
 	return r
 }

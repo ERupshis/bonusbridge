@@ -18,7 +18,7 @@ type Controller struct {
 	log logger.BaseLogger
 }
 
-func CreateAuthenticator(usersStorage managers.BaseUsersManager, jwt jwtgenerator.JwtGenerator, baseLogger logger.BaseLogger) *Controller {
+func CreateController(usersStorage managers.BaseUsersManager, jwt jwtgenerator.JwtGenerator, baseLogger logger.BaseLogger) *Controller {
 	return &Controller{
 		usersStrg: usersStorage,
 		jwt:       jwt,

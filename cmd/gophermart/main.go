@@ -14,7 +14,7 @@ import (
 	postgresUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/orders/controller"
+	"github.com/erupshis/bonusbridge/internal/orders"
 	"github.com/erupshis/bonusbridge/internal/orders/storage"
 	postgresOrders "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql"
 	"github.com/go-chi/chi/v5"
@@ -40,7 +40,7 @@ func main() {
 	}
 
 	jwtGenerator := jwtgenerator.Create(cfg.JWTKey, 2, log)
-	authController := auth.CreateAuthenticator(usersStorage, jwtGenerator, log)
+	authController := auth.CreateController(usersStorage, jwtGenerator, log)
 
 	//orders.
 	storageManager, err := postgresOrders.CreateOrdersPostgreDB(ctxWithCancel, cfg, log)
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	ordersStorage := storage.Create(storageManager, log)
-	ordersController := controller.CreateController(ordersStorage, log)
+	ordersController := orders.CreateController(ordersStorage, log)
 
 	//controllers mounting.
 	router := chi.NewRouter()
