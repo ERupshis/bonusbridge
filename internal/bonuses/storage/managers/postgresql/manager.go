@@ -84,6 +84,7 @@ func (p *postgresDB) Close() error {
 }
 
 func (p *postgresDB) AddBonuses(ctx context.Context, userID int64, count float32) error {
+
 	return nil
 }
 
@@ -91,8 +92,8 @@ func (p *postgresDB) GetBonuses(ctx context.Context, userID int64) (float32, err
 	return -1, nil
 }
 
-func (p *postgresDB) WithdrawBonuses(ctx context.Context, userID int64, count float32) (bool, error) {
-	return false, nil
+func (p *postgresDB) WithdrawBonuses(ctx context.Context, userID int64, count float32) error {
+	return nil
 }
 
 func (p *postgresDB) GetWithdrawnBonuses(ctx context.Context, userID int64) (float32, error) {
