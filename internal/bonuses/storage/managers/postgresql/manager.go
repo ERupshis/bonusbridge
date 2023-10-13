@@ -109,7 +109,7 @@ func (p *postgresDB) AddBonuses(ctx context.Context, userID int64, count float32
 			return fmt.Errorf(errMsg, err)
 		}
 	} else {
-		if err = bonuses.UpdateById(ctx, tx, bonusesArr[0].ID, map[string]interface{}{"balance": bonusesArr[0].Current + count}, p.log); err != nil {
+		if err = bonuses.UpdateByID(ctx, tx, bonusesArr[0].ID, map[string]interface{}{"balance": bonusesArr[0].Current + count}, p.log); err != nil {
 			helpers.ExecuteWithLogError(tx.Rollback, p.log)
 			return fmt.Errorf(errMsg, err)
 		}
@@ -181,7 +181,7 @@ func (p *postgresDB) WithdrawBonuses(ctx context.Context, withdrawal *data.Withd
 		"withdrawn": bonusesArr[0].Withdrawn,
 	}
 
-	if err = bonuses.UpdateById(ctx, tx, bonusesArr[0].ID, valuesToUpdate, p.log); err != nil {
+	if err = bonuses.UpdateByID(ctx, tx, bonusesArr[0].ID, valuesToUpdate, p.log); err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
 	}

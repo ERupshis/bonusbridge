@@ -13,8 +13,8 @@ import (
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
-// UpdateById performs direct query request to database to edit existing bonuses record.
-func UpdateById(ctx context.Context, tx *sql.Tx, id int64, values map[string]interface{}, log logger.BaseLogger) error {
+// UpdateByID performs direct query request to database to edit existing bonuses record.
+func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]interface{}, log logger.BaseLogger) error {
 	errMsg := fmt.Sprintf("update partially person by id '%d' with data '%v' in '%s'", id, values, data.GetTableFullName(data.BonusesTable)) + ": %w"
 
 	var columnsToUpdate []string
@@ -25,7 +25,7 @@ func UpdateById(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 	}
 	valuesToUpdate = append(valuesToUpdate, id)
 
-	stmt, err := createUpdateBonusesByIdStmt(ctx, tx, columnsToUpdate)
+	stmt, err := createUpdateBonusesByIDStmt(ctx, tx, columnsToUpdate)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -52,8 +52,8 @@ func UpdateById(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 	return nil
 }
 
-// createUpdateBonusesByIdStmt generates statement for update query.
-func createUpdateBonusesByIdStmt(ctx context.Context, tx *sql.Tx, values []string) (*sql.Stmt, error) {
+// createUpdateBonusesByIDStmt generates statement for update query.
+func createUpdateBonusesByIDStmt(ctx context.Context, tx *sql.Tx, values []string) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	builder := psql.Update(data.GetTableFullName(data.BonusesTable))
