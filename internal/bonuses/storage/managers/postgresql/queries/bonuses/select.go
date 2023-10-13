@@ -1,4 +1,4 @@
-package queries
+package bonuses
 
 import (
 	"context"
@@ -6,19 +6,19 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/erupshis/bonusbridge/internal/auth/users/data"
-	dbUsersData "github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql/data"
+	"github.com/erupshis/bonusbridge/internal/bonuses/data"
+	dbBonusesData "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/dberrors"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
-// SelectUsers performs direct query request to database to select users satisfying filters.
-func SelectUsers(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.User, error) {
-	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbUsersData.UsersTable) + ": %w"
+// Select performs direct query request to database to select bonuses satisfying filters.
+func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.Balance, error) {
+	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)) + ": %w"
 
-	stmt, err := createSelectUsersStmt(ctx, tx, filters)
+	stmt, err := createSelectBonusesStmt(ctx, tx, filters)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
@@ -50,45 +50,44 @@ func SelectUsers(ctx context.Context, tx *sql.Tx, filters map[string]interface{}
 	}
 
 	defer helpers.ExecuteWithLogError(rows.Close, log)
-	var res []data.User
+	var res []data.Balance
 	for rows.Next() {
-		user := data.User{}
+		order := data.Balance{}
 		err := rows.Scan(
-			&user.ID,
-			&user.Login,
-			&user.Password,
-			&user.Role,
+			&order.ID,
+			&order.UserID,
+			&order.Current,
+			&order.Withdrawn,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("parse db result: %w", err)
 		}
 
-		res = append(res, user)
+		res = append(res, order)
 	}
 
 	return res, nil
 }
 
-// createSelectUsersStmt generates statement for select query.
-func createSelectUsersStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) (*sql.Stmt, error) {
+// createSelectBonusesStmt generates statement for select query.
+func createSelectBonusesStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	builder := psql.Select(
 		"id",
-		"login",
-		"password",
-		"role_id",
+		"user_id",
+		"balance",
+		"withdrawn",
 	).
-		From(dbUsersData.GetTableFullName(dbUsersData.UsersTable))
-	if len(filters) != 0 {
-		for key := range filters {
-			builder = builder.Where(sq.Eq{key: "?"})
-		}
+		From(dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable))
+
+	for key := range filters {
+		builder = builder.Where(sq.Eq{key: "?"})
 	}
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbUsersData.GetTableFullName(dbUsersData.UsersTable), err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable), err)
 	}
 	return tx.PrepareContext(ctx, psqlSelect)
 }

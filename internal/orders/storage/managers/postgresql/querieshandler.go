@@ -4,11 +4,11 @@ package postgresql
 /*
 // DeletePerson performs direct query request to database to delete person by id.
 func (q *QueriesHandler) DeletePerson(ctx context.Context, tx *sql.Tx, id int64) (int64, error) {
-	errorMsg := fmt.Sprintf("delete person by id '%v' in '%s", id, PersonsTable) + ": %w"
+	errMsg := fmt.Sprintf("delete person by id '%v' in '%s", id, PersonsTable) + ": %w"
 
 	stmt, err := createDeletePersonStmt(ctx, tx)
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	defer helpers.ExecuteWithLogError(stmt.Close, q.log)
 
@@ -19,12 +19,12 @@ func (q *QueriesHandler) DeletePerson(ctx context.Context, tx *sql.Tx, id int64)
 	}
 	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, q.log, []int{1, 1, 3}, databaseErrorsToRetry, query)
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 
 	count, err := result.RowsAffected()
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 
 	return count, nil
@@ -45,9 +45,9 @@ func createDeletePersonStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) 
 	return tx.PrepareContext(ctx, psqlInsert)
 }
 
-// UpdatePartialPersonById generates statement for delete query.
-func (q *QueriesHandler) UpdatePartialPersonById(ctx context.Context, tx *sql.Tx, id int64, values map[string]interface{}) (int64, error) {
-	errorMsg := fmt.Sprintf("update partially person by id '%d' with data '%v' in '%s'", id, values, PersonsTable) + ": %w"
+// UpdateBonusesById generates statement for delete query.
+func (q *QueriesHandler) UpdateBonusesById(ctx context.Context, tx *sql.Tx, id int64, values map[string]interface{}) (int64, error) {
+	errMsg := fmt.Sprintf("update partially person by id '%d' with data '%v' in '%s'", id, values, PersonsTable) + ": %w"
 
 	var columnsToUpdate []string
 	var valuesToUpdate []interface{}
@@ -59,7 +59,7 @@ func (q *QueriesHandler) UpdatePartialPersonById(ctx context.Context, tx *sql.Tx
 
 	stmt, err := createUpdatePersonByIdStmt(ctx, tx, columnsToUpdate)
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	defer helpers.ExecuteWithLogError(stmt.Close, q.log)
 
@@ -73,12 +73,12 @@ func (q *QueriesHandler) UpdatePartialPersonById(ctx context.Context, tx *sql.Tx
 	}
 	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, q.log, []int{1, 1, 3}, databaseErrorsToRetry, query)
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 
 	count, err := result.RowsAffected()
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 
 	return count, nil
@@ -104,11 +104,11 @@ func createUpdatePersonByIdStmt(ctx context.Context, tx *sql.Tx, values []string
 
 // GetAdditionalId returns foreign key from linked table.
 func (q *QueriesHandler) GetAdditionalId(ctx context.Context, tx *sql.Tx, name string, table string) (int64, error) {
-	errorMsg := fmt.Sprintf("get additional id for '%s' in '%s'", name, table) + ": %w"
+	errMsg := fmt.Sprintf("get additional id for '%s' in '%s'", name, table) + ": %w"
 
 	stmt, err := createSelectAdditionalIdStmt(ctx, tx, name, table)
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	defer helpers.ExecuteWithLogError(stmt.Close, q.log)
 
@@ -121,10 +121,10 @@ func (q *QueriesHandler) GetAdditionalId(ctx context.Context, tx *sql.Tx, name s
 		if errors.Is(err, sql.ErrNoRows) {
 			id, err = q.InsertAdditionalId(ctx, tx, name, table)
 			if err != nil {
-				return 0, fmt.Errorf(errorMsg, err)
+				return 0, fmt.Errorf(errMsg, err)
 			}
 		} else {
-			return 0, fmt.Errorf(errorMsg, err)
+			return 0, fmt.Errorf(errMsg, err)
 		}
 	}
 
@@ -149,11 +149,11 @@ func createSelectAdditionalIdStmt(ctx context.Context, tx *sql.Tx, name string, 
 
 // InsertAdditionalId adds new value for linked table and returns foreign key from linked table.
 func (q *QueriesHandler) InsertAdditionalId(ctx context.Context, tx *sql.Tx, name string, table string) (int64, error) {
-	errorMsg := fmt.Sprintf("insert additional value for '%s' in '%s'", name, table) + ": %w"
+	errMsg := fmt.Sprintf("insert additional value for '%s' in '%s'", name, table) + ": %w"
 
 	stmt, err := createInsertAdditionalIdStmt(ctx, tx, name, table)
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	defer helpers.ExecuteWithLogError(stmt.Close, q.log)
 
@@ -163,7 +163,7 @@ func (q *QueriesHandler) InsertAdditionalId(ctx context.Context, tx *sql.Tx, nam
 	}
 	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, q.log, []int{1, 1, 3}, databaseErrorsToRetry, query)
 	if err != nil {
-		return 0, fmt.Errorf(errorMsg, err)
+		return 0, fmt.Errorf(errMsg, err)
 	}
 
 	return id, nil

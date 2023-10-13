@@ -44,7 +44,8 @@ func Withdraw(strg storage.Storage, log logger.BaseLogger) http.HandlerFunc {
 			return
 		}
 
-		if err = strg.WithdrawBonuses(r.Context(), userID, withdrawal.Sum); err != nil {
+		withdrawal.UserID = userID
+		if err = strg.WithdrawBonuses(r.Context(), &withdrawal); err != nil {
 			if errors.Is(err, storage.ErrNotEnoughBonuses) {
 				w.WriteHeader(http.StatusPaymentRequired)
 			} else {

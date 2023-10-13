@@ -10,8 +10,11 @@ import (
 
 	"github.com/erupshis/bonusbridge/internal/bonuses/data"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers"
+	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/bonuses"
+	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/withdrawals"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/dberrors"
+	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 	"github.com/golang-migrate/migrate/v4"
@@ -84,22 +87,138 @@ func (p *postgresDB) Close() error {
 }
 
 func (p *postgresDB) AddBonuses(ctx context.Context, userID int64, count float32) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	errMsg := "add bonuses in db: %w"
+	p.log.Info("[bonuses:postgresDB:GetBalance] start transaction")
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
 
+	bonusesArr, err := bonuses.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, err)
+	}
+
+	if len(bonusesArr) == 0 {
+		if err = bonuses.Insert(ctx, tx, userID, count, p.log); err != nil {
+			helpers.ExecuteWithLogError(tx.Rollback, p.log)
+			return fmt.Errorf(errMsg, err)
+		}
+	} else {
+		if err = bonuses.UpdateById(ctx, tx, bonusesArr[0].ID, map[string]interface{}{"balance": bonusesArr[0].Current + count}, p.log); err != nil {
+			helpers.ExecuteWithLogError(tx.Rollback, p.log)
+			return fmt.Errorf(errMsg, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[bonuses:postgresDB:AddBonuses] transaction successful")
 	return nil
 }
 
-func (p *postgresDB) GetBonuses(ctx context.Context, userID int64) (float32, error) {
-	return -1, nil
+func (p *postgresDB) GetBalance(ctx context.Context, userID int64) (*data.Balance, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	p.log.Info("[bonuses:postgresDB:GetBalance] start transaction")
+	errMsg := "get bonuses balance in db: %w"
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	bonusesArr, err := bonuses.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[bonuses:postgresDB:GetBalance] transaction successful")
+	if len(bonusesArr) == 0 {
+		return nil, nil
+	}
+	return &bonusesArr[0], nil
 }
 
-func (p *postgresDB) WithdrawBonuses(ctx context.Context, userID int64, count float32) error {
+func (p *postgresDB) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdrawal) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.log.Info("[bonuses:postgresDB:WithdrawBonuses] start transaction")
+	errMsg := "withdraw bonuses in db: %w"
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+
+	bonusesArr, err := bonuses.Select(ctx, tx, map[string]interface{}{"user_id": withdrawal.UserID}, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, err)
+	}
+
+	if len(bonusesArr) == 0 {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, fmt.Errorf("bonuses record wasn't found for userID '%d'", withdrawal.UserID))
+	}
+
+	bonusesArr[0].Current -= withdrawal.Sum
+	bonusesArr[0].Withdrawn += withdrawal.Sum
+
+	valuesToUpdate := map[string]interface{}{
+		"balance":   bonusesArr[0].Current,
+		"withdrawn": bonusesArr[0].Withdrawn,
+	}
+
+	if err = bonuses.UpdateById(ctx, tx, bonusesArr[0].ID, valuesToUpdate, p.log); err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, err)
+	}
+
+	if err = withdrawals.Insert(ctx, tx, withdrawal, p.log); err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[bonuses:postgresDB:WithdrawBonuses] transaction successful")
 	return nil
-}
-
-func (p *postgresDB) GetWithdrawnBonuses(ctx context.Context, userID int64) (float32, error) {
-	return -1, nil
 }
 
 func (p *postgresDB) GetWithdrawals(ctx context.Context, userID int64) ([]data.Withdrawal, error) {
-	return nil, nil
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	p.log.Info("[bonuses:postgresDB:GetWithdrawals] start transaction")
+	errMsg := "get withdrawals from db: %w"
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	withdrawalsArr, err := withdrawals.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[bonuses:postgresDB:GetWithdrawals] transaction successful")
+	return withdrawalsArr, nil
 }

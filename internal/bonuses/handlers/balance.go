@@ -25,13 +25,6 @@ func Balance(storage storage.Storage, log logger.BaseLogger) http.HandlerFunc {
 			return
 		}
 
-		//TODO: check necessity.
-		if userBalance == nil {
-			log.Info("[bonuses:handlers:Balance] failed to get balance: null")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
 		respBody, err := json.Marshal(userBalance)
 		if err != nil {
 			log.Info("[bonuses:handlers:Balance] failed to marshal userID's '%d' balance: %v", userID, err)

@@ -224,7 +224,7 @@ func (p *postgresDB) UpdatePersonById(ctx context.Context, id int64, values map[
 		return 0, fmt.Errorf(errorMessage, err)
 	}
 
-	affectedCount, err := p.handler.UpdatePartialPersonById(ctx, tx, id, values)
+	affectedCount, err := p.handler.UpdateBonusesById(ctx, tx, id, values)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return 0, fmt.Errorf(errorMessage, err)
