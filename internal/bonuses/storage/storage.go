@@ -2,11 +2,14 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/bonuses/data"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
+
+var ErrNotEnoughBonuses = fmt.Errorf("not enough bonuses for withdrawal")
 
 type Storage struct {
 	manager managers.BaseBonusesManager
@@ -21,11 +24,11 @@ func Create(manager managers.BaseBonusesManager, baseLogger logger.BaseLogger) S
 	}
 }
 
-func (s *Storage) AddBonuses(ctx context.Context, userID int64, count int64) error {
+func (s *Storage) AddBonuses(ctx context.Context, userID int64, count float32) error {
 	return nil
 }
 
-func (s *Storage) WithdrawBonuses(ctx context.Context, userID int64, count int64) error {
+func (s *Storage) WithdrawBonuses(ctx context.Context, userID int64, count float32) error {
 	return nil
 }
 
