@@ -66,6 +66,10 @@ func main() {
 	bonusesStrg := bonusesStorage.Create(bonusesManager, log)
 	bonusesController := bonuses.CreateController(bonusesStrg, log)
 
+	//accrual(orders update) system.
+	//accrualController := accrual.CreateController(ordersStrg, bonusesStrg, log)
+	//accrualController.Run(ctxWithCancel)
+
 	//controllers mounting.
 	router := chi.NewRouter()
 	router.Mount("/api/user/register", authController.RouteRegister())

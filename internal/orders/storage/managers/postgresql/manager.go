@@ -120,6 +120,10 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 	return id, nil
 }
 
+func (p *postgresDB) UpdateOrder(ctx context.Context, order *data.Order) error {
+	return nil
+}
+
 func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -151,7 +155,7 @@ func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, 
 
 	return &orders[0], nil
 }
-func (p *postgresDB) GetOrders(ctx context.Context, userID int64) ([]data.Order, error) {
+func (p *postgresDB) GetOrders(ctx context.Context, filters map[string]interface{}) ([]data.Order, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -162,7 +166,7 @@ func (p *postgresDB) GetOrders(ctx context.Context, userID int64) ([]data.Order,
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	orders, err := queries.SelectOrders(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
+	orders, err := queries.SelectOrders(ctx, tx, filters, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
