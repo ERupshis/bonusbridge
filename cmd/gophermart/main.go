@@ -12,6 +12,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	postgresUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql"
+	"github.com/erupshis/bonusbridge/internal/bonuses"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders"
@@ -51,11 +52,15 @@ func main() {
 	ordersStorage := storage.Create(storageManager, log)
 	ordersController := orders.CreateController(ordersStorage, log)
 
+	//bonuses.
+	bonusesController := bonuses.CreateController(log)
+
 	//controllers mounting.
 	router := chi.NewRouter()
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
 	router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), data.RoleUser))
+	router.Mount("/api/user/balance", authController.AuthorizeUser(bonusesController.Route(), data.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)
