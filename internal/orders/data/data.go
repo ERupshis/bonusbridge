@@ -5,26 +5,26 @@ import (
 )
 
 const (
-	statusNew = iota + 1
-	statusProcessing
-	statusInvalid
-	statusProcessed
-	statusUndefined
+	StatusNew = iota + 1
+	StatusProcessing
+	StatusInvalid
+	StatusProcessed
+	StatusUndefined
 )
 
 func GetOrderStatusID(statusStr string) int {
-	res := statusUndefined
+	res := StatusUndefined
 	switch statusStr {
 	case "NEW":
-		res = statusNew
+		res = StatusNew
 	case "PROCESSING":
-		res = statusProcessing
+		res = StatusProcessing
 	case "INVALID":
-		res = statusInvalid
+		res = StatusInvalid
 	case "PROCESSED":
-		res = statusProcessed
+		res = StatusProcessed
 	default:
-		res = statusUndefined
+		res = StatusUndefined
 	}
 
 	return res

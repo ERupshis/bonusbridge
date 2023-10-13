@@ -43,34 +43,33 @@ func (c *Controller) requestCalculationsResult(ctx context.Context, chOut chan<-
 			c.log.Info("[accrual:Controller:requestCalculationsResult] requests task is stopping")
 			return
 		default:
-			ordersProcessing, err := c.ordersStorage.GetOrders(ctx, map[string]interface{}{"status_id": data.GetOrderStatusID("PROCESSING")})
-			if err != nil {
-				c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with PROCESSING status: %w", err)
-			} else {
-				for _, _ = range ordersProcessing {
+			//TODO: need to return await time and wait it to continue.
+			for _, status := range []string{"PROCESSING", "NEW"} {
+				orders, err := c.ordersStorage.GetOrders(ctx, map[string]interface{}{"status_id": data.GetOrderStatusID(status)})
+				if err != nil {
+					c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with PROCESSING status: %w", err)
+				} else {
+					for i := 0; i < len(orders); i++ {
 
-				}
-			}
-
-			ordersNew, err := c.ordersStorage.GetOrders(ctx, map[string]interface{}{"status_id": data.GetOrderStatusID("NEW")})
-			if err != nil {
-				c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with NEW status: %w", err)
-			} else {
-				for _, _ = range ordersNew {
-
+					}
 				}
 			}
 		}
 	}
 }
 
-func (c *Controller) updateOrders(ctx context.Context, chOut <-chan data.Order) {
+func (c *Controller) updateOrders(ctx context.Context, chIn <-chan data.Order) {
 	for {
 		select {
 		case <-ctx.Done():
 			c.log.Info("[accrual:Controller:updateOrders] update orders task is stopping")
 			return
-		default:
+		case order := <-chIn:
+			if data.GetOrderStatusID(order.Status) > data.StatusProcessing {
+				if err := c.ordersStorage.UpdateOrder(ctx, &order); err != nil {
+					c.log.Info("[accrual:Controller:updateOrders] error occurred during order '%v' update in db: %w", order, err)
+				}
+			}
 		}
 	}
 }

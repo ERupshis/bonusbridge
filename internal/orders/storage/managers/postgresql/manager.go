@@ -121,6 +121,7 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 }
 
 func (p *postgresDB) UpdateOrder(ctx context.Context, order *data.Order) error {
+	//TODO: add implementation.
 	return nil
 }
 
