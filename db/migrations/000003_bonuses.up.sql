@@ -1,0 +1,20 @@
+--BONUSES
+CREATE SCHEMA IF NOT EXISTS bonuses;
+
+--BALANCES
+CREATE TABLE IF NOT EXISTS bonuses.bonuses
+(
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users.users(id) NOT NULL,
+    balance NUMERIC(9,2) DEFAULT 0,
+    withdrawn NUMERIC(9,2) DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS bonuses.withdrawals
+(
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users.users(id) NOT NULL,
+    order_num NUMERIC NOT NULL,
+    sum NUMERIC(9,2) DEFAULT 0,
+    processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

@@ -19,6 +19,7 @@ func InterfaceToString(i interface{}) string {
 	return fmt.Sprintf("%v", i)
 }
 
+// TODO: remove
 func UnmarshalData(body []byte, dst interface{}) error {
 	return json.Unmarshal(body, dst)
 }

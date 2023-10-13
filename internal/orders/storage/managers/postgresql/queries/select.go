@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/erupshis/bonusbridge/internal/dberrors"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
@@ -15,11 +16,11 @@ import (
 
 // SelectOrders performs direct query request to database to select orders satisfying filters.
 func SelectOrders(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.Order, error) {
-	errorMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbData.OrdersTable) + ": %w"
+	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbData.OrdersTable) + ": %w"
 
 	stmt, err := createSelectOrdersStmt(ctx, tx, filters)
 	if err != nil {
-		return nil, fmt.Errorf(errorMsg, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 	defer helpers.ExecuteWithLogError(stmt.Close, log)
 
@@ -37,15 +38,15 @@ func SelectOrders(ctx context.Context, tx *sql.Tx, filters map[string]interface{
 
 		if err == nil {
 			if rows.Err() != nil {
-				return fmt.Errorf(errorMsg, rows.Err())
+				return fmt.Errorf(errMsg, rows.Err())
 			}
 		}
 
 		return err
 	}
-	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dbData.DatabaseErrorsToRetry, query)
+	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dberrors.DatabaseErrorsToRetry, query)
 	if err != nil {
-		return nil, fmt.Errorf(errorMsg, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
 	defer helpers.ExecuteWithLogError(rows.Close, log)

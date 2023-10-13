@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/erupshis/bonusbridge/internal/dberrors"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
@@ -15,11 +16,11 @@ import (
 
 // InsertOrder performs direct query request to database to add new order.
 func InsertOrder(ctx context.Context, tx *sql.Tx, orderData *data.Order, log logger.BaseLogger) (int64, error) {
-	errorMsg := fmt.Sprintf("insert order '%v' in '%s'", *orderData, dbData.OrdersTable) + ": %w"
+	errMsg := fmt.Sprintf("insert order '%v' in '%s'", *orderData, dbData.OrdersTable) + ": %w"
 
 	stmt, err := createInsertOrderStmt(ctx, tx)
 	if err != nil {
-		return -1, fmt.Errorf(errorMsg, err)
+		return -1, fmt.Errorf(errMsg, err)
 	}
 	defer helpers.ExecuteWithLogError(stmt.Close, log)
 
@@ -36,9 +37,9 @@ func InsertOrder(ctx context.Context, tx *sql.Tx, orderData *data.Order, log log
 
 		return err
 	}
-	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dbData.DatabaseErrorsToRetry, query)
+	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dberrors.DatabaseErrorsToRetry, query)
 	if err != nil {
-		return -1, fmt.Errorf(errorMsg, err)
+		return -1, fmt.Errorf(errMsg, err)
 	}
 
 	return newOrderID, nil

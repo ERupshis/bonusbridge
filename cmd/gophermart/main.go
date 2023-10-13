@@ -6,16 +6,20 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	postgresUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql"
+	"github.com/erupshis/bonusbridge/internal/bonuses"
+	bonusesStorage "github.com/erupshis/bonusbridge/internal/bonuses/storage"
+	postgresBonuses "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders"
-	"github.com/erupshis/bonusbridge/internal/orders/storage"
+	ordersStorage "github.com/erupshis/bonusbridge/internal/orders/storage"
 	postgresOrders "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql"
 	"github.com/go-chi/chi/v5"
 )
@@ -33,8 +37,10 @@ func main() {
 	ctxWithCancel, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	dbMutex := &sync.RWMutex{}
+
 	//authentication.
-	usersStorage, err := postgresUsers.CreateUsersPostgreDB(ctxWithCancel, cfg, log)
+	usersStorage, err := postgresUsers.CreateUsersPostgreDB(ctxWithCancel, cfg, dbMutex, log)
 	if err != nil {
 		log.Info("failed to connect to users database: %v", err)
 	}
@@ -43,19 +49,29 @@ func main() {
 	authController := auth.CreateController(usersStorage, jwtGenerator, log)
 
 	//orders.
-	storageManager, err := postgresOrders.CreateOrdersPostgreDB(ctxWithCancel, cfg, log)
+	ordersManager, err := postgresOrders.CreateOrdersPostgreDB(ctxWithCancel, cfg, dbMutex, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
 	}
 
-	ordersStorage := storage.Create(storageManager, log)
-	ordersController := orders.CreateController(ordersStorage, log)
+	ordersStrg := ordersStorage.Create(ordersManager, log)
+	ordersController := orders.CreateController(ordersStrg, log)
+
+	//bonuses.
+	bonusesManager, err := postgresBonuses.CreateBonusesPostgreDB(ctxWithCancel, cfg, dbMutex, log)
+	if err != nil {
+		log.Info("failed to connect to orders database: %v", err)
+	}
+
+	bonusesStrg := bonusesStorage.Create(bonusesManager, log)
+	bonusesController := bonuses.CreateController(bonusesStrg, log)
 
 	//controllers mounting.
 	router := chi.NewRouter()
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
 	router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), data.RoleUser))
+	router.Mount("/api/user/balance", authController.AuthorizeUser(bonusesController.Route(), data.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)

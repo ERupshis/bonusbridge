@@ -13,12 +13,12 @@ var ErrOrderWasAddedByAnotherUser = fmt.Errorf("order has already been added by 
 var ErrOrderWasAddedBefore = fmt.Errorf("order has already been added")
 
 type Storage struct {
-	manager managers.BaseStorageManager
+	manager managers.BaseOrdersManager
 
 	log logger.BaseLogger
 }
 
-func Create(manager managers.BaseStorageManager, baseLogger logger.BaseLogger) Storage {
+func Create(manager managers.BaseOrdersManager, baseLogger logger.BaseLogger) Storage {
 	return Storage{
 		manager: manager,
 		log:     baseLogger,
