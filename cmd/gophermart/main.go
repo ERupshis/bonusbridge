@@ -13,10 +13,12 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	postgresUsers "github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql"
 	"github.com/erupshis/bonusbridge/internal/bonuses"
+	bonusesStorage "github.com/erupshis/bonusbridge/internal/bonuses/storage"
+	postgresBonuses "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql"
 	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders"
-	"github.com/erupshis/bonusbridge/internal/orders/storage"
+	ordersStorage "github.com/erupshis/bonusbridge/internal/orders/storage"
 	postgresOrders "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql"
 	"github.com/go-chi/chi/v5"
 )
@@ -44,16 +46,22 @@ func main() {
 	authController := auth.CreateController(usersStorage, jwtGenerator, log)
 
 	//orders.
-	storageManager, err := postgresOrders.CreateOrdersPostgreDB(ctxWithCancel, cfg, log)
+	ordersManager, err := postgresOrders.CreateOrdersPostgreDB(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
 	}
 
-	ordersStorage := storage.Create(storageManager, log)
-	ordersController := orders.CreateController(ordersStorage, log)
+	ordersStrg := ordersStorage.Create(ordersManager, log)
+	ordersController := orders.CreateController(ordersStrg, log)
 
 	//bonuses.
-	bonusesController := bonuses.CreateController(log)
+	bonusesManager, err := postgresBonuses.CreateBonusesPostgreDB(ctxWithCancel, cfg, log)
+	if err != nil {
+		log.Info("failed to connect to orders database: %v", err)
+	}
+
+	bonusesStrg := bonusesStorage.Create(bonusesManager, log)
+	bonusesController := bonuses.CreateController(bonusesStrg, log)
 
 	//controllers mounting.
 	router := chi.NewRouter()
