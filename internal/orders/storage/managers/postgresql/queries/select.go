@@ -81,7 +81,7 @@ func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]
 		"num",
 		"user_id",
 		"status",
-		"accrual_status",
+		"accrual",
 		"uploaded_at",
 	).
 		From(dbData.GetTableFullName(dbData.OrdersTable)).
@@ -98,7 +98,7 @@ func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]
 			case "status":
 				key = dbData.GetTableFullName(dbData.StatusesTable) + ".status"
 			case "accrual":
-				key = dbData.GetTableFullName(dbData.OrdersTable) + ".accrual_status"
+				key = dbData.GetTableFullName(dbData.OrdersTable) + ".accrual"
 			case "uploaded_at":
 				key = dbData.GetTableFullName(dbData.OrdersTable) + ".uploaded_at"
 			}
