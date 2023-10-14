@@ -20,10 +20,17 @@ func CreateController(storage storage.Storage, baseLogger logger.BaseLogger) Con
 	}
 }
 
-func (c *Controller) Route() *chi.Mux {
+func (c *Controller) RouteBonuses() *chi.Mux {
 	r := chi.NewRouter()
 	r.Get("/", handlers.Balance(c.storage, c.log))
 	r.Post("/withdraw", handlers.Withdraw(c.storage, c.log))
+
+	return r
+}
+
+func (c *Controller) RouteWithdrawals() *chi.Mux {
+	r := chi.NewRouter()
+	r.Get("/", handlers.Withdrawals(c.storage, c.log))
 
 	return r
 }

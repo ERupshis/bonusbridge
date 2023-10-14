@@ -78,7 +78,8 @@ func main() {
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
 	router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), data.RoleUser))
-	router.Mount("/api/user/balance", authController.AuthorizeUser(bonusesController.Route(), data.RoleUser))
+	router.Mount("/api/user/balance", authController.AuthorizeUser(bonusesController.RouteBonuses(), data.RoleUser))
+	router.Mount("/api/user/withdrawals", authController.AuthorizeUser(bonusesController.RouteWithdrawals(), data.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)
