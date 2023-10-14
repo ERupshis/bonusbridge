@@ -47,8 +47,16 @@ func (s *Storage) AddOrder(ctx context.Context, number string, userID int64) err
 	}
 }
 
-func (s *Storage) GetOrders(ctx context.Context, userID int64) ([]data.Order, error) {
-	orders, err := s.manager.GetOrders(ctx, userID)
+func (s *Storage) UpdateOrder(ctx context.Context, order *data.Order) error {
+	if err := s.manager.UpdateOrder(ctx, order); err != nil {
+		return fmt.Errorf("update order in storage: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Storage) GetOrders(ctx context.Context, filters map[string]interface{}) ([]data.Order, error) {
+	orders, err := s.manager.GetOrders(ctx, filters)
 	if err != nil {
 		return nil, fmt.Errorf("get orders from storage: %w", err)
 	}

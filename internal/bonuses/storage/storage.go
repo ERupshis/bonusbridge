@@ -10,6 +10,7 @@ import (
 )
 
 var ErrNotEnoughBonuses = fmt.Errorf("not enough bonuses for withdrawal")
+var ErrWithdrawalsMissing = fmt.Errorf("user doesn't have any withdrawal")
 
 type Storage struct {
 	manager managers.BaseBonusesManager
@@ -69,5 +70,14 @@ func (s *Storage) GetBalance(ctx context.Context, userID int64) (*data.Balance, 
 }
 
 func (s *Storage) GetWithdrawals(ctx context.Context, userID int64) ([]data.Withdrawal, error) {
-	return s.manager.GetWithdrawals(ctx, userID)
+	withdrawals, err := s.manager.GetWithdrawals(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get userID '%d' withdrawals: %w", userID, err)
+	}
+
+	if len(withdrawals) == 0 {
+		return nil, fmt.Errorf("get userID '%d' withdrawals: %w", userID, ErrWithdrawalsMissing)
+	}
+
+	return withdrawals, nil
 }

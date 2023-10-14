@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -57,7 +58,7 @@ func initConfig(level string) (zap.Config, error) {
 func (l *loggerZap) Sync() {
 	err := l.zap.Sync()
 	if err != nil {
-		panic(err)
+		log.Printf("[loggerZap:Sync] error occured: %v\n", err)
 	}
 }
 

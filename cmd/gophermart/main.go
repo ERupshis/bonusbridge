@@ -9,6 +9,8 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/erupshis/bonusbridge/internal/accrual"
+	"github.com/erupshis/bonusbridge/internal/accrual/client"
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
@@ -33,10 +35,10 @@ func main() {
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to create logger: %v", err)
 	}
+	defer log.Sync()
 
 	ctxWithCancel, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	dbMutex := &sync.RWMutex{}
 
 	//authentication.
@@ -66,12 +68,18 @@ func main() {
 	bonusesStrg := bonusesStorage.Create(bonusesManager, log)
 	bonusesController := bonuses.CreateController(bonusesStrg, log)
 
+	//accrual(orders update) system.
+	requestClient := client.CreateDefault(log)
+	accrualController := accrual.CreateController(ordersStrg, bonusesStrg, requestClient, cfg, log)
+	accrualController.Run(ctxWithCancel, 5)
+
 	//controllers mounting.
 	router := chi.NewRouter()
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
 	router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), data.RoleUser))
-	router.Mount("/api/user/balance", authController.AuthorizeUser(bonusesController.Route(), data.RoleUser))
+	router.Mount("/api/user/balance", authController.AuthorizeUser(bonusesController.RouteBonuses(), data.RoleUser))
+	router.Mount("/api/user/withdrawals", authController.AuthorizeUser(bonusesController.RouteWithdrawals(), data.RoleUser))
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)

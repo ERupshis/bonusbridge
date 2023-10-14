@@ -34,7 +34,7 @@ type postgresDB struct {
 
 // CreateOrdersPostgreDB creates manager implementation. Supports migrations and check connection to database.
 func CreateOrdersPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseOrdersManager, error) {
-	log.Info("[CreateOrdersPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
+	log.Info("[orders:CreateOrdersPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
 	if err != nil {
@@ -66,7 +66,7 @@ func CreateOrdersPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWMu
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
 
-	log.Info("[CreateOrdersPostgreDB] successful")
+	log.Info("[orders:CreateOrdersPostgreDB] successful")
 	return manager, nil
 }
 
@@ -98,7 +98,7 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 		UploadedAt: time.Now(),
 	}
 
-	p.log.Info("[postgresDB:AddOrder] start transaction")
+	p.log.Info("[orders:postgresDB:AddOrder] start transaction")
 	errMsg := "add order in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
@@ -116,15 +116,46 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 		return -1, fmt.Errorf(errMsg, err)
 	}
 
-	p.log.Info("[postgresDB:AddOrder] transaction successful")
+	p.log.Info("[orders:postgresDB:AddOrder] transaction successful")
 	return id, nil
+}
+
+func (p *postgresDB) UpdateOrder(ctx context.Context, order *data.Order) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.log.Info("[orders:postgresDB:UpdateOrder] start transaction")
+	errMsg := "update order in db: %w"
+	tx, err := p.database.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+
+	valuesToUpdate := map[string]interface{}{
+		"status_id": data.GetOrderStatusID(order.Status),
+		"accrual":   order.Accrual,
+	}
+
+	err = queries.UpdateByID(ctx, tx, int64(order.ID), valuesToUpdate, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[orders:postgresDB:GetOrder] transaction successful")
+	return nil
 }
 
 func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[postgresDB:GetOrder] start transaction")
+	p.log.Info("[orders:postgresDB:GetOrder] start transaction")
 	errMsg := "select order in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
@@ -142,7 +173,7 @@ func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, 
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	p.log.Info("[postgresDB:GetOrder] transaction successful")
+	p.log.Info("[orders:postgresDB:GetOrder] transaction successful")
 	if len(orders) == 0 {
 		return nil, nil
 	} else if len(orders) > 1 {
@@ -151,18 +182,18 @@ func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, 
 
 	return &orders[0], nil
 }
-func (p *postgresDB) GetOrders(ctx context.Context, userID int64) ([]data.Order, error) {
+func (p *postgresDB) GetOrders(ctx context.Context, filters map[string]interface{}) ([]data.Order, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[postgresDB:GetOrders] start transaction")
+	p.log.Info("[orders:postgresDB:GetOrders] start transaction")
 	errMsg := "select orders in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	orders, err := queries.SelectOrders(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
+	orders, err := queries.SelectOrders(ctx, tx, filters, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
@@ -173,6 +204,6 @@ func (p *postgresDB) GetOrders(ctx context.Context, userID int64) ([]data.Order,
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	p.log.Info("[postgresDB:GetOrders] transaction successful")
+	p.log.Info("[orders:postgresDB:GetOrders] transaction successful")
 	return orders, nil
 }

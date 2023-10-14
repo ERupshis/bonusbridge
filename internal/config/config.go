@@ -21,6 +21,8 @@ func Parse() Config {
 	var config = Config{}
 	checkFlags(&config)
 	checkEnvironments(&config)
+
+	config.AccrualAddr = AddHTTPPrefixIfNeed(config.AccrualAddr)
 	return config
 }
 
@@ -41,7 +43,7 @@ func checkFlags(config *Config) {
 	flag.StringVar(&config.DatabaseDSN, flagDatabaseDSN, "postgres://postgres:postgres@localhost:5432/gophermart_db?sslmode=disable", "database DSN")
 
 	// accrual.
-	flag.StringVar(&config.AccrualAddr, flagAccrualAddress, "TODO", "accrual system address")
+	flag.StringVar(&config.AccrualAddr, flagAccrualAddress, "localhost:8080", "accrual system address")
 
 	// accrual.
 	flag.StringVar(&config.JWTKey, flagJWTKey, "need TO REMOVE", "JWT web token key")

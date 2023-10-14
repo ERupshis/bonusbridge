@@ -18,7 +18,7 @@ func GetOrdersHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerF
 			return
 		}
 
-		orders, err := strg.GetOrders(r.Context(), userID)
+		orders, err := strg.GetOrders(r.Context(), map[string]interface{}{"user_id": userID})
 		if err != nil {
 			log.Info("[orders:handlers:GetOrdersHandler] failed to get user's '%d' orders: %v", userID, err)
 			w.WriteHeader(http.StatusInternalServerError)

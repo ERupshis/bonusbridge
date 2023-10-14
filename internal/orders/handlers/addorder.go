@@ -53,7 +53,7 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 			}
 
 			if errors.Is(err, storage.ErrOrderWasAddedByAnotherUser) {
-				log.Info("[orders:handlers:AddOrderHandler] order '%s' has been already added by another user before", orderNumber, userID)
+				log.Info("[orders:handlers:AddOrderHandler] order '%s' has been already added by another user before", orderNumber)
 				w.WriteHeader(http.StatusConflict)
 				return
 			}
