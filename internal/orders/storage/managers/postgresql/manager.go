@@ -186,7 +186,7 @@ func (p *postgresDB) GetOrders(ctx context.Context, filters map[string]interface
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[orders:postgresDB:GetOrders] start transaction for filters '%v'", filters)
+	p.log.Info("[orders:postgresDB:GetOrders] start transaction with filters '%v'", filters)
 	errMsg := "select orders in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {

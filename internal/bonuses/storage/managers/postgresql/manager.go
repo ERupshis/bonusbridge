@@ -91,7 +91,7 @@ func (p *postgresDB) AddBonuses(ctx context.Context, userID int64, count float32
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	errMsg := "add bonuses in db: %w"
-	p.log.Info("[bonuses:postgresDB:AddBonuses] start transaction for userID '%d', count '%d'", userID, count)
+	p.log.Info("[bonuses:postgresDB:AddBonuses] start transaction for userID '%d', count '%f'", userID, count)
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
