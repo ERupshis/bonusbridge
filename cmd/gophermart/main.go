@@ -71,7 +71,7 @@ func main() {
 	//accrual(orders update) system.
 	requestClient := client.CreateDefault(log)
 	accrualController := accrual.CreateController(ordersStrg, bonusesStrg, requestClient, cfg, log)
-	accrualController.Run(ctxWithCancel, 30)
+	accrualController.Run(ctxWithCancel, 5)
 
 	//controllers mounting.
 	router := chi.NewRouter()
