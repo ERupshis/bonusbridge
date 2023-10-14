@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/logger"
@@ -17,9 +16,4 @@ func ExecuteWithLogError(callback func() error, log logger.BaseLogger) {
 // InterfaceToString simple converter any interface into string.
 func InterfaceToString(i interface{}) string {
 	return fmt.Sprintf("%v", i)
-}
-
-// TODO: remove
-func UnmarshalData(body []byte, dst interface{}) error {
-	return json.Unmarshal(body, dst)
 }

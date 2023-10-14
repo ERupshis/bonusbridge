@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
@@ -23,7 +24,7 @@ func Register(usersStorage managers.BaseUsersManager, jwt jwtgenerator.JwtGenera
 
 		var user data.User
 		user.Role = data.RoleUser
-		if err := helpers.UnmarshalData(buf.Bytes(), &user); err != nil {
+		if err := json.Unmarshal(buf.Bytes(), &user); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			log.Info("[auth:handlers:Register] bad new user input data: %v", err)
 			return
