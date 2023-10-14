@@ -9,9 +9,6 @@ import (
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
 
-var ErrNotEnoughBonuses = fmt.Errorf("not enough bonuses for withdrawal")
-var ErrWithdrawalsMissing = fmt.Errorf("user doesn't have any withdrawal")
-
 type Storage struct {
 	manager managers.BaseBonusesManager
 
@@ -43,7 +40,7 @@ func (s *Storage) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 	}
 
 	if balance.Current < withdrawal.Sum {
-		return fmt.Errorf("userID '%d' balance '%f' is not enough for withdrawn: %w", withdrawal.UserID, balance.Current, ErrNotEnoughBonuses)
+		return fmt.Errorf("userID '%d' balance '%f' is not enough for withdrawn: %w", withdrawal.UserID, balance.Current, data.ErrNotEnoughBonuses)
 	}
 
 	if err = s.manager.WithdrawBonuses(ctx, withdrawal); err != nil {
@@ -76,7 +73,7 @@ func (s *Storage) GetWithdrawals(ctx context.Context, userID int64) ([]data.With
 	}
 
 	if len(withdrawals) == 0 {
-		return nil, fmt.Errorf("get userID '%d' withdrawals: %w", userID, ErrWithdrawalsMissing)
+		return nil, fmt.Errorf("get userID '%d' withdrawals: %w", userID, data.ErrWithdrawalsMissing)
 	}
 
 	return withdrawals, nil

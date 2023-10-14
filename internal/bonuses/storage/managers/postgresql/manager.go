@@ -91,7 +91,7 @@ func (p *postgresDB) AddBonuses(ctx context.Context, userID int64, count float32
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	errMsg := "add bonuses in db: %w"
-	p.log.Info("[bonuses:postgresDB:GetBalance] start transaction")
+	p.log.Info("[bonuses:postgresDB:AddBonuses] start transaction for userID '%d', count '%d'", userID, count)
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
@@ -127,7 +127,7 @@ func (p *postgresDB) GetBalance(ctx context.Context, userID int64) (*data.Balanc
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[bonuses:postgresDB:GetBalance] start transaction")
+	p.log.Info("[bonuses:postgresDB:GetBalance] start transaction for userID '%d'", userID)
 	errMsg := "get bonuses balance in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
@@ -155,7 +155,7 @@ func (p *postgresDB) WithdrawBonuses(ctx context.Context, withdrawal *data.Withd
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.log.Info("[bonuses:postgresDB:WithdrawBonuses] start transaction")
+	p.log.Info("[bonuses:postgresDB:WithdrawBonuses] start transaction for withdrawal '%v'", *withdrawal)
 	errMsg := "withdraw bonuses in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
@@ -203,7 +203,7 @@ func (p *postgresDB) GetWithdrawals(ctx context.Context, userID int64) ([]data.W
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[bonuses:postgresDB:GetWithdrawals] start transaction")
+	p.log.Info("[bonuses:postgresDB:GetWithdrawals] start transaction for userID '%d'", userID)
 	errMsg := "get withdrawals from db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {

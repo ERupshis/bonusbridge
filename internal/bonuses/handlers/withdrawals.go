@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/erupshis/bonusbridge/internal/auth"
+	"github.com/erupshis/bonusbridge/internal/bonuses/data"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage"
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
@@ -22,7 +23,7 @@ func Withdrawals(strg storage.Storage, log logger.BaseLogger) http.HandlerFunc {
 
 		withdrawals, err := strg.GetWithdrawals(r.Context(), userID)
 		if err != nil {
-			if errors.Is(err, storage.ErrWithdrawalsMissing) {
+			if errors.Is(err, data.ErrWithdrawalsMissing) {
 				w.WriteHeader(http.StatusNoContent)
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)

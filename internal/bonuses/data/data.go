@@ -1,8 +1,12 @@
 package data
 
 import (
+	"fmt"
 	"time"
 )
+
+var ErrNotEnoughBonuses = fmt.Errorf("not enough bonuses for withdrawal")
+var ErrWithdrawalsMissing = fmt.Errorf("user doesn't have any withdrawal")
 
 //go:generate easyjson -all data.go
 type Balance struct {

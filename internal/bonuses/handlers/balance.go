@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/erupshis/bonusbridge/internal/auth"
@@ -33,6 +34,7 @@ func Balance(storage storage.Storage, log logger.BaseLogger) http.HandlerFunc {
 		}
 
 		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Content-Length", fmt.Sprintf("%d", len(respBody)))
 		w.WriteHeader(http.StatusOK)
 		if _, err = w.Write(respBody); err != nil {
 			log.Info("[bonuses:handlers:Balance] failed to write orders data in response body: %v", err)

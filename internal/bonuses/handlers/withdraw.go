@@ -48,7 +48,7 @@ func Withdraw(strg storage.Storage, log logger.BaseLogger) http.HandlerFunc {
 		withdrawal.UserID = userID
 		withdrawal.ProcessedAt = time.Now()
 		if err = strg.WithdrawBonuses(r.Context(), &withdrawal); err != nil {
-			if errors.Is(err, storage.ErrNotEnoughBonuses) {
+			if errors.Is(err, data.ErrNotEnoughBonuses) {
 				w.WriteHeader(http.StatusPaymentRequired)
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
