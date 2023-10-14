@@ -15,6 +15,8 @@ const (
 var ErrUserNotFound = fmt.Errorf("user not found")
 
 // User represents a user in our system.
+//
+//go:generate easyjson -all data.go
 type User struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
