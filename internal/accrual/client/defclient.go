@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
 )
@@ -37,7 +36,7 @@ func (c *defaultClient) RequestCalculationResult(ctx context.Context, host strin
 	if err != nil {
 		return http.StatusInternalServerError, 0, fmt.Errorf("client request error: %w", err)
 	}
-	defer helpers.ExecuteWithLogError(resp.Body.Close, c.log)
+	defer resp.Body.Close()
 
 	pause := 0
 	if resp.StatusCode == http.StatusTooManyRequests {
