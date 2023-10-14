@@ -16,7 +16,7 @@ import (
 
 // SelectUsers performs direct query request to database to select users satisfying filters.
 func SelectUsers(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.User, error) {
-	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbUsersData.UsersTable) + ": %w"
+	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbUsersData.GetTableFullName(dbUsersData.UsersTable)) + ": %w"
 
 	stmt, err := createSelectUsersStmt(ctx, tx, filters)
 	if err != nil {

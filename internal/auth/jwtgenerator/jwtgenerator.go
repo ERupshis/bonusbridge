@@ -25,7 +25,7 @@ type JwtGenerator struct {
 // Create creates JWT tokens generator.
 func Create(jwtKey string, tokenExp int, baseLogger logger.BaseLogger) JwtGenerator {
 	if jwtKey == "" {
-		baseLogger.Info("[jwtgenerator:Create] JWT token generation key is missing")
+		baseLogger.Info("[auth:jwtgenerator:Create] JWT token generation key is missing")
 	}
 
 	return JwtGenerator{
@@ -49,7 +49,7 @@ func (j *JwtGenerator) BuildJWTString(userID int64) (string, error) {
 		return "", err
 	}
 
-	j.log.Info("[jwtgenerator:BuildJWTString] created JWT token for userID '%d'", userID)
+	j.log.Info("[auth:jwtgenerator:BuildJWTString] created JWT token for userID '%d'", userID)
 	return tokenString, nil
 }
 
@@ -68,10 +68,10 @@ func (j *JwtGenerator) GetUserID(tokenString string) int64 {
 	}
 
 	if !token.Valid {
-		j.log.Info("[jwtgenerator:GetUserID] Token is not valid")
+		j.log.Info("[auth:jwtgenerator:GetUserID] Token is not valid")
 		return -1
 	}
 
-	j.log.Info("[jwtgenerator:GetUserID] Token os valid")
+	j.log.Info("[auth:jwtgenerator:GetUserID] Token os valid")
 	return claims.UserID
 }

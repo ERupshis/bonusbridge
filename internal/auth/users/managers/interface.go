@@ -12,5 +12,4 @@ type BaseUsersManager interface {
 	GetUser(ctx context.Context, login string) (*data.User, error)
 	GetUserID(ctx context.Context, login string) (int64, error)
 	GetUserRole(ctx context.Context, userID int64) (int, error)
-	//ValidateUser(ctx context.Context, login string, password string) (bool, error)
 }

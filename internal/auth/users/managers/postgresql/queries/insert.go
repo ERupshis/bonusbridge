@@ -16,7 +16,7 @@ import (
 
 // InsertUser performs direct query request to database to add new user.
 func InsertUser(ctx context.Context, tx *sql.Tx, userData *data.User, log logger.BaseLogger) error {
-	errMsg := fmt.Sprintf("insert user '%v' in '%s'", *userData, dbUsersData.UsersTable) + ": %w"
+	errMsg := fmt.Sprintf("insert user '%v' in '%s'", *userData, dbUsersData.GetTableFullName(dbUsersData.UsersTable)) + ": %w"
 
 	stmt, err := createInsertUserStmt(ctx, tx)
 	if err != nil {

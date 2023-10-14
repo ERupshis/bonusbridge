@@ -86,7 +86,7 @@ func (p *postgresDB) Close() error {
 func (p *postgresDB) AddUser(ctx context.Context, user *data.User) (int64, error) {
 	p.mu.Lock()
 
-	p.log.Info("[users:postgresDB:AddUser] start transaction")
+	p.log.Info("[users:postgresDB:AddUser] start transaction with user data '%v'", *user)
 	errMsg := "add user in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
@@ -152,7 +152,7 @@ func (p *postgresDB) getUser(ctx context.Context, filters map[string]interface{}
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[users:postgresDB:getUser] start transaction")
+	p.log.Info("[users:postgresDB:getUser] start transaction with filters '%v'", filters)
 	errMsg := "get user: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
