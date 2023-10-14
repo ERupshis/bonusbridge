@@ -89,6 +89,7 @@ func (c *Controller) requestCalculationsResult(ctx context.Context, chOut chan<-
 func (c *Controller) pauseRequest(ctx context.Context, interval client.RetryInterval) {
 	c.log.Info("[accrual:Controller:pauseRequest] start request pause '%d' duration", interval)
 	timer := time.NewTimer(time.Duration(interval) * time.Second)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -112,12 +113,14 @@ func (c *Controller) updateOrders(ctx context.Context, chIn <-chan data.Order) {
 				c.log.Info("[accrual:Controller:updateOrders] stop action. channel was closed.")
 				return
 			}
-			if data.GetOrderStatusID(order.Status) > data.StatusProcessing {
+
+			orderStatusID := data.GetOrderStatusID(order.Status)
+			if orderStatusID > data.StatusProcessing {
 				if err := c.ordersStorage.UpdateOrder(ctx, &order); err != nil {
 					c.log.Info("[accrual:Controller:updateOrders] error occurred during order '%v' update in db: %v", order, err)
 				}
 
-				if data.GetOrderStatusID(order.Status) == data.StatusProcessed {
+				if orderStatusID == data.StatusProcessed {
 					if err := c.bonusesStorage.AddBonuses(ctx, order.UserID, order.Accrual); err != nil {
 						c.log.Info("[accrual:Controller:updateOrders] error occurred during add bonuses for order '%v' in db: %v", order, err)
 					}

@@ -34,7 +34,7 @@ func (c *defaultClient) RequestCalculationResult(ctx context.Context, host strin
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return http.StatusInternalServerError, 0, fmt.Errorf("client request error: %w", err)
+		return http.StatusInternalServerError, 0, fmt.Errorf("client request: %w", err)
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
