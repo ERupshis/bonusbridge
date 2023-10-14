@@ -9,9 +9,6 @@ import (
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
 )
 
-var ErrOrderWasAddedByAnotherUser = fmt.Errorf("order has already been added by another user")
-var ErrOrderWasAddedBefore = fmt.Errorf("order has already been added")
-
 type Storage struct {
 	manager managers.BaseOrdersManager
 
@@ -40,9 +37,9 @@ func (s *Storage) AddOrder(ctx context.Context, number string, userID int64) err
 		return nil
 	} else {
 		if order.UserID == userID {
-			return fmt.Errorf("add order in storage: %w", ErrOrderWasAddedBefore)
+			return fmt.Errorf("add order in storage: %w", data.ErrOrderWasAddedBefore)
 		} else {
-			return fmt.Errorf("add order in storage: %w", ErrOrderWasAddedByAnotherUser)
+			return fmt.Errorf("add order in storage: %w", data.ErrOrderWasAddedByAnotherUser)
 		}
 	}
 }

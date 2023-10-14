@@ -1,8 +1,12 @@
 package data
 
 import (
+	"fmt"
 	"time"
 )
+
+var ErrOrderWasAddedByAnotherUser = fmt.Errorf("order has already been added by another user")
+var ErrOrderWasAddedBefore = fmt.Errorf("order has already been added")
 
 const (
 	StatusNew = iota + 1

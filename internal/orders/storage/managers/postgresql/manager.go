@@ -98,7 +98,7 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 		UploadedAt: time.Now(),
 	}
 
-	p.log.Info("[orders:postgresDB:AddOrder] start transaction")
+	p.log.Info("[orders:postgresDB:AddOrder] start transaction for order '%s', userID '%d'", number, userID)
 	errMsg := "add order in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
@@ -124,7 +124,7 @@ func (p *postgresDB) UpdateOrder(ctx context.Context, order *data.Order) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.log.Info("[orders:postgresDB:UpdateOrder] start transaction")
+	p.log.Info("[orders:postgresDB:UpdateOrder] start transaction for order data '%v'", *order)
 	errMsg := "update order in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
@@ -147,7 +147,7 @@ func (p *postgresDB) UpdateOrder(ctx context.Context, order *data.Order) error {
 		return fmt.Errorf(errMsg, err)
 	}
 
-	p.log.Info("[orders:postgresDB:GetOrder] transaction successful")
+	p.log.Info("[orders:postgresDB:UpdateOrder] transaction successful")
 	return nil
 }
 
@@ -155,7 +155,7 @@ func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, 
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[orders:postgresDB:GetOrder] start transaction")
+	p.log.Info("[orders:postgresDB:GetOrder] start transaction for order number '%s'", number)
 	errMsg := "select order in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
@@ -186,7 +186,7 @@ func (p *postgresDB) GetOrders(ctx context.Context, filters map[string]interface
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	p.log.Info("[orders:postgresDB:GetOrders] start transaction")
+	p.log.Info("[orders:postgresDB:GetOrders] start transaction for filters '%v'", filters)
 	errMsg := "select orders in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {

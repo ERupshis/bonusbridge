@@ -8,6 +8,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
+	"github.com/erupshis/bonusbridge/internal/orders/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage"
 	"github.com/erupshis/bonusbridge/internal/orders/validator"
 )
@@ -46,13 +47,13 @@ func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFu
 
 		err = strg.AddOrder(r.Context(), orderNumber, userID)
 		if err != nil {
-			if errors.Is(err, storage.ErrOrderWasAddedBefore) {
+			if errors.Is(err, data.ErrOrderWasAddedBefore) {
 				log.Info("[orders:handlers:AddOrderHandler] order '%s' has been already added by this user before", orderNumber)
 				w.WriteHeader(http.StatusOK)
 				return
 			}
 
-			if errors.Is(err, storage.ErrOrderWasAddedByAnotherUser) {
+			if errors.Is(err, data.ErrOrderWasAddedByAnotherUser) {
 				log.Info("[orders:handlers:AddOrderHandler] order '%s' has been already added by another user before", orderNumber)
 				w.WriteHeader(http.StatusConflict)
 				return
