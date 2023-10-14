@@ -2,8 +2,12 @@ package accrual
 
 import (
 	"context"
+	"errors"
+	"time"
 
+	"github.com/erupshis/bonusbridge/internal/accrual/client"
 	bonusesStorage "github.com/erupshis/bonusbridge/internal/bonuses/storage"
+	"github.com/erupshis/bonusbridge/internal/config"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
 	ordersStorage "github.com/erupshis/bonusbridge/internal/orders/storage"
@@ -13,18 +17,22 @@ type Controller struct {
 	ordersStorage  ordersStorage.Storage
 	bonusesStorage bonusesStorage.Storage
 
+	client client.BaseClient
+
+	accrualAddr string
+
 	log logger.BaseLogger
 }
 
-func CreateController(ordersStorage ordersStorage.Storage, bonusesStorage bonusesStorage.Storage, baseLogger logger.BaseLogger) Controller {
+func CreateController(ordersStorage ordersStorage.Storage, bonusesStorage bonusesStorage.Storage, client client.BaseClient, cfg config.Config, baseLogger logger.BaseLogger) Controller {
 	return Controller{
 		ordersStorage:  ordersStorage,
 		bonusesStorage: bonusesStorage,
+		client:         client,
+		accrualAddr:    cfg.AccrualAddr,
 		log:            baseLogger,
 	}
 }
-
-//TODO: need to run system. It should get queue of tasks to do and update if need.
 
 func (c *Controller) Run(ctx context.Context) {
 	ch := make(chan data.Order, 10)
@@ -36,24 +44,56 @@ func (c *Controller) Run(ctx context.Context) {
 }
 
 func (c *Controller) requestCalculationsResult(ctx context.Context, chOut chan<- data.Order) {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
-			close(chOut)
 			c.log.Info("[accrual:Controller:requestCalculationsResult] requests task is stopping")
+			close(chOut)
 			return
-		default:
-			//TODO: need to return await time and wait it to continue.
+		case <-ticker.C:
 			for _, status := range []string{"PROCESSING", "NEW"} {
 				orders, err := c.ordersStorage.GetOrders(ctx, map[string]interface{}{"status_id": data.GetOrderStatusID(status)})
 				if err != nil {
-					c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with PROCESSING status: %w", err)
+					c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with PROCESSING status: %v", err)
 				} else {
 					for i := 0; i < len(orders); i++ {
+						respStatus, pause, err := c.client.RequestCalculationResult(ctx, c.accrualAddr, &orders[i])
+						if err != nil {
+							if errors.Is(err, context.Canceled) {
+								c.log.Info("[accrual:Controller:requestCalculationsResult] requests task is stopping alt")
+								close(chOut)
+								return
+							}
+							c.log.Info("[accrual:Controller:requestCalculationsResult] failed ('%d') to get calculation from loyalty system for order '%v': %v", respStatus, orders[i], err)
+						}
 
+						if pause != 0 {
+							c.pauseRequest(ctx, pause)
+							i--
+						} else {
+							chOut <- orders[i]
+						}
 					}
 				}
 			}
+		}
+	}
+}
+
+func (c *Controller) pauseRequest(ctx context.Context, interval client.RetryInterval) {
+	c.log.Info("[accrual:Controller:pauseRequest] start request pause '%d' duration", interval)
+	timer := time.NewTimer(time.Duration(interval) * time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			c.log.Info("[accrual:Controller:pauseRequest] pause has been stopped by context")
+			return
+		case <-timer.C:
+			c.log.Info("[accrual:Controller:pauseRequest] pause has been finished")
+			return
 		}
 	}
 }
@@ -64,10 +104,14 @@ func (c *Controller) updateOrders(ctx context.Context, chIn <-chan data.Order) {
 		case <-ctx.Done():
 			c.log.Info("[accrual:Controller:updateOrders] update orders task is stopping")
 			return
-		case order := <-chIn:
+		case order, ok := <-chIn:
+			if !ok {
+				c.log.Info("[accrual:Controller:updateOrders] stop action. channel was closed.")
+				return
+			}
 			if data.GetOrderStatusID(order.Status) > data.StatusProcessing {
 				if err := c.ordersStorage.UpdateOrder(ctx, &order); err != nil {
-					c.log.Info("[accrual:Controller:updateOrders] error occurred during order '%v' update in db: %w", order, err)
+					c.log.Info("[accrual:Controller:updateOrders] error occurred during order '%v' update in db: %v", order, err)
 				}
 			}
 		}

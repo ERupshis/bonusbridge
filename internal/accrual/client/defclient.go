@@ -3,8 +3,10 @@ package client
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
@@ -18,30 +20,47 @@ type defaultClient struct {
 	log    logger.BaseLogger
 }
 
-func CreateDefault(client *http.Client, log logger.BaseLogger) BaseClient {
+func CreateDefault(log logger.BaseLogger) BaseClient {
 	return &defaultClient{
-		client: client,
+		client: &http.Client{},
 		log:    log,
 	}
 }
 
-func (c *defaultClient) RequestCalculationResult(ctx context.Context, order *data.Order) (int, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url+order.Number, nil)
+func (c *defaultClient) RequestCalculationResult(ctx context.Context, host string, order *data.Order) (ResponseStatus, RetryInterval, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, host+url+order.Number, nil)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("create request to loyalty system: %w", err)
+		return http.StatusInternalServerError, 0, fmt.Errorf("create request to loyalty system: %w", err)
 	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("client request error: %w", err)
+		return http.StatusInternalServerError, 0, fmt.Errorf("client request error: %w", err)
 	}
 	defer helpers.ExecuteWithLogError(resp.Body.Close, c.log)
+
+	pause := 0
+	if resp.StatusCode == http.StatusTooManyRequests {
+		pauseStr := resp.Header.Get("Retry-After")
+		pause, err = strconv.Atoi(pauseStr)
+		if err != nil {
+			return http.StatusInternalServerError, 0, fmt.Errorf("parse 'Retry-After' header value: %w", err)
+		}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return ResponseStatus(resp.StatusCode), RetryInterval(pause), nil
+	}
 
 	bufResp := bytes.Buffer{}
 	_, err = bufResp.ReadFrom(resp.Body)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("read response body: %w", err)
+		return http.StatusInternalServerError, 0, fmt.Errorf("read response body: %w", err)
 	}
 
-	return resp.StatusCode, nil
+	if err = json.Unmarshal(bufResp.Bytes(), order); err != nil {
+		return http.StatusInternalServerError, 0, fmt.Errorf("parse response body: %w", err)
+	}
+
+	return ResponseStatus(resp.StatusCode), RetryInterval(pause), nil
 }
