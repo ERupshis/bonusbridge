@@ -28,9 +28,9 @@ type postgresDB struct {
 	log logger.BaseLogger
 }
 
-// CreateUsersPostgreDB creates manager implementation. Supports migrations and check connection to database.
-func CreateUsersPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseUsersManager, error) {
-	log.Info("[CreateUsersPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
+// Create creates manager implementation. Supports migrations and check connection to database.
+func Create(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseUsersManager, error) {
+	log.Info("[users:postgresDB:Create] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
 	if err != nil {
@@ -62,7 +62,7 @@ func CreateUsersPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWMut
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
 
-	log.Info("[CreateUsersPostgreDB] successful")
+	log.Info("[users:postgresDB:Create] successful")
 	return manager, nil
 }
 

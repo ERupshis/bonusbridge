@@ -42,7 +42,7 @@ func main() {
 	dbMutex := &sync.RWMutex{}
 
 	//authentication.
-	usersStorage, err := postgresUsers.CreateUsersPostgreDB(ctxWithCancel, cfg, dbMutex, log)
+	usersStorage, err := postgresUsers.Create(ctxWithCancel, cfg, dbMutex, log)
 	if err != nil {
 		log.Info("failed to connect to users database: %v", err)
 	}
@@ -51,7 +51,7 @@ func main() {
 	authController := auth.CreateController(usersStorage, jwtGenerator, log)
 
 	//orders.
-	ordersManager, err := postgresOrders.CreateOrdersPostgreDB(ctxWithCancel, cfg, dbMutex, log)
+	ordersManager, err := postgresOrders.Create(ctxWithCancel, cfg, dbMutex, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
 	}
@@ -60,7 +60,7 @@ func main() {
 	ordersController := orders.CreateController(ordersStrg, log)
 
 	//bonuses.
-	bonusesManager, err := postgresBonuses.CreateBonusesPostgreDB(ctxWithCancel, cfg, dbMutex, log)
+	bonusesManager, err := postgresBonuses.Create(ctxWithCancel, cfg, dbMutex, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
 	}

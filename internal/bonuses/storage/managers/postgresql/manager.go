@@ -32,9 +32,9 @@ type postgresDB struct {
 	log logger.BaseLogger
 }
 
-// CreateBonusesPostgreDB creates manager implementation. Supports migrations and check connection to database.
-func CreateBonusesPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseBonusesManager, error) {
-	log.Info("[CreateBonusesPostgreDB] open database with settings: '%s'", cfg.DatabaseDSN)
+// Create creates manager implementation. Supports migrations and check connection to database.
+func Create(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseBonusesManager, error) {
+	log.Info("[bonuses:postgresDB:Create] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
 	if err != nil {
@@ -66,7 +66,7 @@ func CreateBonusesPostgreDB(ctx context.Context, cfg config.Config, mu *sync.RWM
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
 
-	log.Info("[CreateBonusesPostgreDB] successful")
+	log.Info("[bonuses:postgresDB:Create] successful")
 	return manager, nil
 }
 
