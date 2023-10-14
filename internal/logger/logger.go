@@ -21,12 +21,12 @@ func CreateZapLogger(level string) (BaseLogger, error) {
 		return nil, err
 	}
 
-	log, err := cfg.Build()
+	logZap, err := cfg.Build()
 	if err != nil {
 		return nil, fmt.Errorf("create zap loggerZap^ %w", err)
 	}
 
-	return &loggerZap{zap: log}, nil
+	return &loggerZap{zap: logZap}, nil
 }
 
 // Info generates 'info' level log.
