@@ -38,7 +38,7 @@ func CreateController(ordersStorage ordersStorage.Storage, bonusesStorage bonuse
 func (c *Controller) Run(ctx context.Context, requestInterval int) {
 	ch := make(chan data.Order, 10)
 
-	c.log.Info("[accrual:Controller:Run] start interaction with loyalty system")
+	c.log.Info("[accrual:Controller:Run] start interaction with loyalty system, requests interval '%d' seconds", requestInterval)
 
 	go c.requestCalculationsResult(ctx, ch, time.Duration(requestInterval))
 	go c.updateOrders(ctx, ch)
@@ -51,7 +51,7 @@ func (c *Controller) requestCalculationsResult(ctx context.Context, chOut chan<-
 	for {
 		select {
 		case <-ctx.Done():
-			c.log.Info("[accrual:Controller:requestCalculationsResult] requests task is stopping")
+			c.log.Info("[accrual:Controller:requestCalculationsResult] requests task is stopping by context")
 			close(chOut)
 			return
 		case <-ticker.C:
@@ -106,7 +106,7 @@ func (c *Controller) updateOrders(ctx context.Context, chIn <-chan data.Order) {
 	for {
 		select {
 		case <-ctx.Done():
-			c.log.Info("[accrual:Controller:updateOrders] update orders task is stopping")
+			c.log.Info("[accrual:Controller:updateOrders] update orders task is stopping by context")
 			return
 		case order, ok := <-chIn:
 			if !ok {
