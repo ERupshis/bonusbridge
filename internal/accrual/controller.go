@@ -118,6 +118,7 @@ func (c *Controller) updateOrders(ctx context.Context, chIn <-chan data.Order) {
 			if orderStatusID > data.StatusProcessing {
 				if err := c.ordersStorage.UpdateOrder(ctx, &order); err != nil {
 					c.log.Info("[accrual:Controller:updateOrders] error occurred during order '%v' update in db: %v", order, err)
+					continue
 				}
 
 				if orderStatusID == data.StatusProcessed {
