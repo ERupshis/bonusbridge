@@ -35,10 +35,10 @@ func main() {
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to create logger: %v", err)
 	}
+	defer log.Sync()
 
 	ctxWithCancel, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	dbMutex := &sync.RWMutex{}
 
 	//authentication.
@@ -71,7 +71,7 @@ func main() {
 	//accrual(orders update) system.
 	requestClient := client.CreateDefault(log)
 	accrualController := accrual.CreateController(ordersStrg, bonusesStrg, requestClient, cfg, log)
-	accrualController.Run(ctxWithCancel)
+	accrualController.Run(ctxWithCancel, 30)
 
 	//controllers mounting.
 	router := chi.NewRouter()

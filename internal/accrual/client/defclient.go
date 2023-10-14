@@ -62,5 +62,5 @@ func (c *defaultClient) RequestCalculationResult(ctx context.Context, host strin
 		return http.StatusInternalServerError, 0, fmt.Errorf("parse response body: %w", err)
 	}
 
-	return ResponseStatus(resp.StatusCode), RetryInterval(pause), nil
+	return ResponseStatus(resp.StatusCode), 0, nil
 }

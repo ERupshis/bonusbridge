@@ -3,6 +3,7 @@ package accrual
 import (
 	"context"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/erupshis/bonusbridge/internal/accrual/client"
@@ -34,17 +35,17 @@ func CreateController(ordersStorage ordersStorage.Storage, bonusesStorage bonuse
 	}
 }
 
-func (c *Controller) Run(ctx context.Context) {
+func (c *Controller) Run(ctx context.Context, requestInterval int) {
 	ch := make(chan data.Order, 10)
 
 	c.log.Info("[accrual:Controller:Run] start interaction with loyalty system")
 
-	go c.requestCalculationsResult(ctx, ch)
+	go c.requestCalculationsResult(ctx, ch, time.Duration(requestInterval))
 	go c.updateOrders(ctx, ch)
 }
 
-func (c *Controller) requestCalculationsResult(ctx context.Context, chOut chan<- data.Order) {
-	ticker := time.NewTicker(10 * time.Second)
+func (c *Controller) requestCalculationsResult(ctx context.Context, chOut chan<- data.Order, requestInterval time.Duration) {
+	ticker := time.NewTicker(requestInterval * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -63,14 +64,16 @@ func (c *Controller) requestCalculationsResult(ctx context.Context, chOut chan<-
 						respStatus, pause, err := c.client.RequestCalculationResult(ctx, c.accrualAddr, &orders[i])
 						if err != nil {
 							if errors.Is(err, context.Canceled) {
-								c.log.Info("[accrual:Controller:requestCalculationsResult] requests task is stopping alt")
+								c.log.Info("[accrual:Controller:requestCalculationsResult] requests task is stopping: %v", err)
 								close(chOut)
 								return
 							}
+
 							c.log.Info("[accrual:Controller:requestCalculationsResult] failed ('%d') to get calculation from loyalty system for order '%v': %v", respStatus, orders[i], err)
+							continue
 						}
 
-						if pause != 0 {
+						if respStatus == http.StatusTooManyRequests && pause != 0 {
 							c.pauseRequest(ctx, pause)
 							i--
 						} else {
