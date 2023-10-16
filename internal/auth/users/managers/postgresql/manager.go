@@ -23,8 +23,8 @@ type manager struct {
 // Create creates manager implementation. Supports migrations and check connection to database.
 func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseUsersManager {
 	return &manager{
-		DBConn: dbConn,
-		log:    log,
+		Conn: dbConn,
+		log:  log,
 	}
 }
 
