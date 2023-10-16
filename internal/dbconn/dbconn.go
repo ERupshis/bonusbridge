@@ -75,5 +75,5 @@ func (p *DBConn) CheckConnection(ctx context.Context) (bool, error) {
 
 // Close closes database.
 func (p *DBConn) Close() error {
-	return p.Close()
+	return p.DB.Close()
 }
