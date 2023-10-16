@@ -1,4 +1,4 @@
-package dberrors
+package db
 
 import (
 	"errors"

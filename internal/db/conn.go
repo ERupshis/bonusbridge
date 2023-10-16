@@ -1,4 +1,4 @@
-package dbconn
+package db
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/config"
-	"github.com/erupshis/bonusbridge/internal/dberrors"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 	"github.com/golang-migrate/migrate/v4"
@@ -18,15 +17,15 @@ import (
 
 const migrationsFolder = "file://db/migrations/"
 
-// DBConn storageManager implementation for PostgreSQL. Consist of database.
-type DBConn struct {
+// Conn storageManager implementation for PostgreSQL. Consist of database.
+type Conn struct {
 	*sql.DB
 	log logger.BaseLogger
 }
 
-// Create creates manager implementation. Supports migrations and check connection to database.
-func Create(ctx context.Context, cfg config.Config, log logger.BaseLogger) (*DBConn, error) {
-	log.Info("[dbconn:Create] open database with settings: '%s'", cfg.DatabaseDSN)
+// CreateConnection creates manager implementation. Supports migrations and check connection to database.
+func CreateConnection(ctx context.Context, cfg config.Config, log logger.BaseLogger) (*Conn, error) {
+	log.Info("[dbconn:CreateConnection] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
 	if err != nil {
@@ -48,7 +47,7 @@ func Create(ctx context.Context, cfg config.Config, log logger.BaseLogger) (*DBC
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
 
-	manager := &DBConn{
+	manager := &Conn{
 		DB:  database,
 		log: log,
 	}
@@ -57,16 +56,16 @@ func Create(ctx context.Context, cfg config.Config, log logger.BaseLogger) (*DBC
 		return nil, fmt.Errorf(createDatabaseError, err)
 	}
 
-	log.Info("[dbconn:Create] successful")
+	log.Info("[dbconn:CreateConnection] successful")
 	return manager, nil
 }
 
 // CheckConnection checks connection to database.
-func (p *DBConn) CheckConnection(ctx context.Context) (bool, error) {
+func (p *Conn) CheckConnection(ctx context.Context) (bool, error) {
 	exec := func(context context.Context) (int64, []byte, error) {
 		return 0, []byte{}, p.PingContext(context)
 	}
-	_, _, err := retryer.RetryCallWithTimeout(ctx, p.log, nil, dberrors.DatabaseErrorsToRetry, exec)
+	_, _, err := retryer.RetryCallWithTimeout(ctx, p.log, nil, DatabaseErrorsToRetry, exec)
 	if err != nil {
 		return false, fmt.Errorf("check connection: %w", err)
 	}
@@ -74,6 +73,6 @@ func (p *DBConn) CheckConnection(ctx context.Context) (bool, error) {
 }
 
 // Close closes database.
-func (p *DBConn) Close() error {
+func (p *Conn) Close() error {
 	return p.DB.Close()
 }

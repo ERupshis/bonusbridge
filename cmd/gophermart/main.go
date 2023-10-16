@@ -18,7 +18,7 @@ import (
 	bonusesStorage "github.com/erupshis/bonusbridge/internal/bonuses/storage"
 	postgresBonuses "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql"
 	"github.com/erupshis/bonusbridge/internal/config"
-	"github.com/erupshis/bonusbridge/internal/dbconn"
+	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders"
 	ordersStorage "github.com/erupshis/bonusbridge/internal/orders/storage"
@@ -40,7 +40,7 @@ func main() {
 	ctxWithCancel, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	databaseConn, err := dbconn.Create(ctxWithCancel, cfg, log)
+	databaseConn, err := db.CreateConnection(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to users database: %v", err)
 	}

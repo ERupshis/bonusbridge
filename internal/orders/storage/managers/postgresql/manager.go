@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/erupshis/bonusbridge/internal/dbconn"
+	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
@@ -17,13 +17,13 @@ import (
 )
 
 type manager struct {
-	*dbconn.DBConn
+	*db.Conn
 
 	log logger.BaseLogger
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(dbConn *dbconn.DBConn, log logger.BaseLogger) managers.BaseOrdersManager {
+func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseOrdersManager {
 	return &manager{
 		DBConn: dbConn,
 		log:    log,

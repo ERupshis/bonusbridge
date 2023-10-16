@@ -7,7 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/data"
-	"github.com/erupshis/bonusbridge/internal/dberrors"
+	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/retryer"
@@ -39,7 +39,7 @@ func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 		)
 		return err
 	}
-	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, dberrors.DatabaseErrorsToRetry, query)
+	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, db.DatabaseErrorsToRetry, query)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}

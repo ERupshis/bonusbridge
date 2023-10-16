@@ -7,7 +7,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
 	"github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql/queries"
-	"github.com/erupshis/bonusbridge/internal/dbconn"
+	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
@@ -15,13 +15,13 @@ import (
 // manager storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type manager struct {
-	*dbconn.DBConn
+	*db.Conn
 
 	log logger.BaseLogger
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(dbConn *dbconn.DBConn, log logger.BaseLogger) managers.BaseUsersManager {
+func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseUsersManager {
 	return &manager{
 		DBConn: dbConn,
 		log:    log,

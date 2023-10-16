@@ -9,7 +9,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/bonuses"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/withdrawals"
-	"github.com/erupshis/bonusbridge/internal/dbconn"
+	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -19,13 +19,13 @@ import (
 // manager storageManager implementation for PostgreSQL
 // All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type manager struct {
-	*dbconn.DBConn
+	*db.Conn
 
 	log logger.BaseLogger
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(dbConn *dbconn.DBConn, log logger.BaseLogger) managers.BaseBonusesManager {
+func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseBonusesManager {
 	return &manager{
 		DBConn: dbConn,
 		log:    log,
