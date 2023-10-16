@@ -26,25 +26,25 @@ type Conn struct {
 // CreateConnection creates manager implementation. Supports migrations and check connection to database.
 func CreateConnection(ctx context.Context, cfg config.Config, log logger.BaseLogger) (*Conn, error) {
 	log.Info("[dbconn:CreateConnection] open database with settings: '%s'", cfg.DatabaseDSN)
-	createDatabaseError := "create db: %w"
+	errMsg := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
 	if err != nil {
-		return nil, fmt.Errorf(createDatabaseError, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
 	driver, err := postgres.WithInstance(database, &postgres.Config{})
 	if err != nil {
-		return nil, fmt.Errorf(createDatabaseError, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(migrationsFolder, "postgres", driver)
 	if err != nil {
-		return nil, fmt.Errorf(createDatabaseError, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
 	err = m.Up()
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return nil, fmt.Errorf(createDatabaseError, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
 	manager := &Conn{
@@ -53,7 +53,7 @@ func CreateConnection(ctx context.Context, cfg config.Config, log logger.BaseLog
 	}
 
 	if _, err = manager.CheckConnection(ctx); err != nil {
-		return nil, fmt.Errorf(createDatabaseError, err)
+		return nil, fmt.Errorf(errMsg, err)
 	}
 
 	log.Info("[dbconn:CreateConnection] successful")
