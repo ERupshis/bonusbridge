@@ -31,7 +31,7 @@ func main() {
 	cfg := config.Parse()
 
 	//log system.
-	log, err := logger.CreateZapLogger("info")
+	log, err := logger.CreateZapLogger(cfg.LogLevel)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to create logger: %v", err)
 	}
@@ -87,6 +87,7 @@ func main() {
 		r.Mount("/api/user/withdrawals", bonusesController.RouteWithdrawals())
 	})
 
+	//server launch.
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)
 		if err := http.ListenAndServe(cfg.HostAddr, router); err != nil {
