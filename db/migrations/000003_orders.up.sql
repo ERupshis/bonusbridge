@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS orders.orders
     id SERIAL PRIMARY KEY,
     num NUMERIC NOT NULL UNIQUE,
     status_id SMALLINT REFERENCES orders.statuses(id) NOT NULL,
-    user_id INTEGER REFERENCES users.users(id) NOT NULL ,
-    accrual NUMERIC(9, 2) DEFAULT 0,
+    user_id INTEGER REFERENCES users.users(id) NOT NULL,
+    bonus_id INTEGER UNIQUE REFERENCES bonuses.bonuses(id) NOT NULL,
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
