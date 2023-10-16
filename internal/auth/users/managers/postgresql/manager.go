@@ -2,88 +2,36 @@ package postgresql
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
 	"github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql/queries"
-	"github.com/erupshis/bonusbridge/internal/config"
-	"github.com/erupshis/bonusbridge/internal/dberrors"
+	"github.com/erupshis/bonusbridge/internal/dbconn"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/retryer"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 )
 
-// postgresDB storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
+// manager storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
-type postgresDB struct {
-	database *sql.DB
+type manager struct {
+	*dbconn.DBConn
 
 	log logger.BaseLogger
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseUsersManager, error) {
-	log.Info("[users:postgresDB:Create] open database with settings: '%s'", cfg.DatabaseDSN)
-	createDatabaseError := "create db: %w"
-	database, err := sql.Open("pgx", cfg.DatabaseDSN)
-	if err != nil {
-		return nil, fmt.Errorf(createDatabaseError, err)
+func Create(dbConn *dbconn.DBConn, log logger.BaseLogger) managers.BaseUsersManager {
+	return &manager{
+		DBConn: dbConn,
+		log:    log,
 	}
-
-	driver, err := postgres.WithInstance(database, &postgres.Config{})
-	if err != nil {
-		return nil, fmt.Errorf(createDatabaseError, err)
-	}
-
-	m, err := migrate.NewWithDatabaseInstance("file://db/migrations/", "postgres", driver)
-	if err != nil {
-		return nil, fmt.Errorf(createDatabaseError, err)
-	}
-
-	err = m.Up()
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return nil, fmt.Errorf(createDatabaseError, err)
-	}
-
-	manager := &postgresDB{
-		database: database,
-		log:      log,
-	}
-
-	if _, err = manager.CheckConnection(ctx); err != nil {
-		return nil, fmt.Errorf(createDatabaseError, err)
-	}
-
-	log.Info("[users:postgresDB:Create] successful")
-	return manager, nil
 }
 
-// CheckConnection checks connection to database.
-func (p *postgresDB) CheckConnection(ctx context.Context) (bool, error) {
-	exec := func(context context.Context) (int64, []byte, error) {
-		return 0, []byte{}, p.database.PingContext(context)
-	}
-	_, _, err := retryer.RetryCallWithTimeout(ctx, p.log, nil, dberrors.DatabaseErrorsToRetry, exec)
-	if err != nil {
-		return false, fmt.Errorf("check connection: %w", err)
-	}
-	return true, nil
-}
-
-// Close closes database.
-func (p *postgresDB) Close() error {
-	return p.database.Close()
-}
-
-func (p *postgresDB) AddUser(ctx context.Context, user *data.User) (int64, error) {
-	p.log.Info("[users:postgresDB:AddUser] start transaction with user data '%v'", *user)
+func (p *manager) AddUser(ctx context.Context, user *data.User) (int64, error) {
+	p.log.Info("[users:manager:AddUser] start transaction with user data '%v'", *user)
 	errMsg := "add user in db: %w"
-	tx, err := p.database.BeginTx(ctx, nil)
+	tx, err := p.BeginTx(ctx, nil)
 	if err != nil {
 		return -1, fmt.Errorf(errMsg, err)
 	}
@@ -99,11 +47,11 @@ func (p *postgresDB) AddUser(ctx context.Context, user *data.User) (int64, error
 		return -1, fmt.Errorf(errMsg, err)
 	}
 
-	p.log.Info("[users:postgresDB:AddUser] transaction successful")
+	p.log.Info("[users:manager:AddUser] transaction successful")
 	return p.GetUserID(ctx, user.Login)
 }
 
-func (p *postgresDB) GetUser(ctx context.Context, login string) (*data.User, error) {
+func (p *manager) GetUser(ctx context.Context, login string) (*data.User, error) {
 	user, err := p.getUser(ctx, map[string]interface{}{"login": login})
 	if err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
@@ -116,7 +64,7 @@ func (p *postgresDB) GetUser(ctx context.Context, login string) (*data.User, err
 	return user, nil
 }
 
-func (p *postgresDB) GetUserID(ctx context.Context, login string) (int64, error) {
+func (p *manager) GetUserID(ctx context.Context, login string) (int64, error) {
 	user, err := p.getUser(ctx, map[string]interface{}{"login": login})
 	if err != nil {
 		return -1, fmt.Errorf("get user ID: %w", err)
@@ -129,7 +77,7 @@ func (p *postgresDB) GetUserID(ctx context.Context, login string) (int64, error)
 	return user.ID, nil
 }
 
-func (p *postgresDB) GetUserRole(ctx context.Context, userID int64) (int, error) {
+func (p *manager) GetUserRole(ctx context.Context, userID int64) (int, error) {
 	user, err := p.getUser(ctx, map[string]interface{}{"id": userID})
 	if err != nil {
 		return -1, fmt.Errorf("get user role: %w", err)
@@ -142,10 +90,10 @@ func (p *postgresDB) GetUserRole(ctx context.Context, userID int64) (int, error)
 	return user.Role, nil
 }
 
-func (p *postgresDB) getUser(ctx context.Context, filters map[string]interface{}) (*data.User, error) {
-	p.log.Info("[users:postgresDB:getUser] start transaction with filters '%v'", filters)
+func (p *manager) getUser(ctx context.Context, filters map[string]interface{}) (*data.User, error) {
+	p.log.Info("[users:manager:getUser] start transaction with filters '%v'", filters)
 	errMsg := "get user: %w"
-	tx, err := p.database.BeginTx(ctx, nil)
+	tx, err := p.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
@@ -166,7 +114,7 @@ func (p *postgresDB) getUser(ctx context.Context, filters map[string]interface{}
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	p.log.Info("[users:postgresDB:getUser] transaction successful")
+	p.log.Info("[users:manager:getUser] transaction successful")
 
 	if len(users) == 0 {
 		return nil, nil

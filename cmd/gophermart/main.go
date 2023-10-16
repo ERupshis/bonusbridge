@@ -18,6 +18,7 @@ import (
 	bonusesStorage "github.com/erupshis/bonusbridge/internal/bonuses/storage"
 	postgresBonuses "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql"
 	"github.com/erupshis/bonusbridge/internal/config"
+	"github.com/erupshis/bonusbridge/internal/dbconn"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders"
 	ordersStorage "github.com/erupshis/bonusbridge/internal/orders/storage"
@@ -38,32 +39,24 @@ func main() {
 
 	ctxWithCancel, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	//TODO: create just one connection to DB and share it.
 
-	//authentication.
-	usersStorage, err := postgresUsers.Create(ctxWithCancel, cfg, log)
+	databaseConn, err := dbconn.Create(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to users database: %v", err)
 	}
 
+	//authentication.
+	usersStorage := postgresUsers.Create(databaseConn, log)
 	jwtGenerator := jwtgenerator.Create(cfg.JWTKey, 2, log)
 	authController := auth.CreateController(usersStorage, jwtGenerator, log)
 
 	//orders.
-	ordersManager, err := postgresOrders.Create(ctxWithCancel, cfg, log)
-	if err != nil {
-		log.Info("failed to connect to orders database: %v", err)
-	}
-
+	ordersManager := postgresOrders.Create(databaseConn, log)
 	ordersStrg := ordersStorage.Create(ordersManager, log)
 	ordersController := orders.CreateController(ordersStrg, log)
 
 	//bonuses.
-	bonusesManager, err := postgresBonuses.Create(ctxWithCancel, cfg, log)
-	if err != nil {
-		log.Info("failed to connect to orders database: %v", err)
-	}
-
+	bonusesManager, err := postgresBonuses.Create(databaseConn, log)
 	bonusesStrg := bonusesStorage.Create(bonusesManager, log)
 	bonusesController := bonuses.CreateController(bonusesStrg, log)
 
