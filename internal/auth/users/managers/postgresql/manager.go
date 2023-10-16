@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
@@ -22,14 +21,13 @@ import (
 // postgresDB storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
-	mu       *sync.RWMutex
 	database *sql.DB
 
 	log logger.BaseLogger
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseUsersManager, error) {
+func Create(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseUsersManager, error) {
 	log.Info("[users:postgresDB:Create] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
@@ -54,7 +52,6 @@ func Create(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger
 
 	manager := &postgresDB{
 		database: database,
-		mu:       mu,
 		log:      log,
 	}
 
@@ -84,8 +81,6 @@ func (p *postgresDB) Close() error {
 }
 
 func (p *postgresDB) AddUser(ctx context.Context, user *data.User) (int64, error) {
-	p.mu.Lock()
-
 	p.log.Info("[users:postgresDB:AddUser] start transaction with user data '%v'", *user)
 	errMsg := "add user in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
@@ -105,7 +100,6 @@ func (p *postgresDB) AddUser(ctx context.Context, user *data.User) (int64, error
 	}
 
 	p.log.Info("[users:postgresDB:AddUser] transaction successful")
-	p.mu.Unlock()
 	return p.GetUserID(ctx, user.Login)
 }
 
@@ -149,9 +143,6 @@ func (p *postgresDB) GetUserRole(ctx context.Context, userID int64) (int, error)
 }
 
 func (p *postgresDB) getUser(ctx context.Context, filters map[string]interface{}) (*data.User, error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	p.log.Info("[users:postgresDB:getUser] start transaction with filters '%v'", filters)
 	errMsg := "get user: %w"
 	tx, err := p.database.BeginTx(ctx, nil)

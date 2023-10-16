@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/erupshis/bonusbridge/internal/config"
@@ -26,14 +25,13 @@ import (
 // postgresDB storageManager implementation for PostgreSQL. Consist of database and QueriesHandler.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
-	mu       *sync.RWMutex
 	database *sql.DB
 
 	log logger.BaseLogger
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseOrdersManager, error) {
+func Create(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseOrdersManager, error) {
 	log.Info("[orders:postgresDB:Create] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
@@ -58,7 +56,6 @@ func Create(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger
 
 	manager := &postgresDB{
 		database: database,
-		mu:       mu,
 		log:      log,
 	}
 
@@ -88,8 +85,6 @@ func (p *postgresDB) Close() error {
 }
 
 func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) (int64, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	newOrder := &data.Order{
 		Number:     number,
 		UserID:     userID,
@@ -121,9 +116,6 @@ func (p *postgresDB) AddOrder(ctx context.Context, number string, userID int64) 
 }
 
 func (p *postgresDB) UpdateOrder(ctx context.Context, order *data.Order) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	p.log.Info("[orders:postgresDB:UpdateOrder] start transaction for order data '%v'", *order)
 	errMsg := "update order in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
@@ -152,9 +144,6 @@ func (p *postgresDB) UpdateOrder(ctx context.Context, order *data.Order) error {
 }
 
 func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	p.log.Info("[orders:postgresDB:GetOrder] start transaction for order number '%s'", number)
 	errMsg := "select order in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
@@ -183,9 +172,6 @@ func (p *postgresDB) GetOrder(ctx context.Context, number string) (*data.Order, 
 	return &orders[0], nil
 }
 func (p *postgresDB) GetOrders(ctx context.Context, filters map[string]interface{}) ([]data.Order, error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	p.log.Info("[orders:postgresDB:GetOrders] start transaction with filters '%v'", filters)
 	errMsg := "select orders in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)

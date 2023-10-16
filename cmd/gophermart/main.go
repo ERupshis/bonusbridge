@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/erupshis/bonusbridge/internal/accrual"
@@ -39,11 +38,10 @@ func main() {
 
 	ctxWithCancel, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	dbMutex := &sync.RWMutex{} //TODO: remove
 	//TODO: create just one connection to DB and share it.
 
 	//authentication.
-	usersStorage, err := postgresUsers.Create(ctxWithCancel, cfg, dbMutex, log)
+	usersStorage, err := postgresUsers.Create(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to users database: %v", err)
 	}
@@ -52,7 +50,7 @@ func main() {
 	authController := auth.CreateController(usersStorage, jwtGenerator, log)
 
 	//orders.
-	ordersManager, err := postgresOrders.Create(ctxWithCancel, cfg, dbMutex, log)
+	ordersManager, err := postgresOrders.Create(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
 	}
@@ -61,7 +59,7 @@ func main() {
 	ordersController := orders.CreateController(ordersStrg, log)
 
 	//bonuses.
-	bonusesManager, err := postgresBonuses.Create(ctxWithCancel, cfg, dbMutex, log)
+	bonusesManager, err := postgresBonuses.Create(ctxWithCancel, cfg, log)
 	if err != nil {
 		log.Info("failed to connect to orders database: %v", err)
 	}

@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/erupshis/bonusbridge/internal/bonuses/data"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers"
@@ -26,14 +25,13 @@ import (
 // postgresDB storageManager implementation for PostgreSQL. Consist of database.
 // Request to database are synchronized by sync.RWMutex. All requests are done on united transaction. Multi insert/update/delete is not supported at the moment.
 type postgresDB struct {
-	mu       *sync.RWMutex
 	database *sql.DB
 
 	log logger.BaseLogger
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger.BaseLogger) (managers.BaseBonusesManager, error) {
+func Create(ctx context.Context, cfg config.Config, log logger.BaseLogger) (managers.BaseBonusesManager, error) {
 	log.Info("[bonuses:postgresDB:Create] open database with settings: '%s'", cfg.DatabaseDSN)
 	createDatabaseError := "create db: %w"
 	database, err := sql.Open("pgx", cfg.DatabaseDSN)
@@ -58,7 +56,6 @@ func Create(ctx context.Context, cfg config.Config, mu *sync.RWMutex, log logger
 
 	manager := &postgresDB{
 		database: database,
-		mu:       mu,
 		log:      log,
 	}
 
@@ -88,10 +85,8 @@ func (p *postgresDB) Close() error {
 }
 
 func (p *postgresDB) AddBonuses(ctx context.Context, userID int64, count float32) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	errMsg := "add bonuses in db: %w"
 	p.log.Info("[bonuses:postgresDB:AddBonuses] start transaction for userID '%d', count '%f'", userID, count)
+	errMsg := "add bonuses in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
@@ -124,9 +119,6 @@ func (p *postgresDB) AddBonuses(ctx context.Context, userID int64, count float32
 }
 
 func (p *postgresDB) GetBalance(ctx context.Context, userID int64) (*data.Balance, error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	p.log.Info("[bonuses:postgresDB:GetBalance] start transaction for userID '%d'", userID)
 	errMsg := "get bonuses balance in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
@@ -152,9 +144,6 @@ func (p *postgresDB) GetBalance(ctx context.Context, userID int64) (*data.Balanc
 }
 
 func (p *postgresDB) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdrawal) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	p.log.Info("[bonuses:postgresDB:WithdrawBonuses] start transaction for withdrawal '%v'", *withdrawal)
 	errMsg := "withdraw bonuses in db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
@@ -200,9 +189,6 @@ func (p *postgresDB) WithdrawBonuses(ctx context.Context, withdrawal *data.Withd
 }
 
 func (p *postgresDB) GetWithdrawals(ctx context.Context, userID int64) ([]data.Withdrawal, error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	p.log.Info("[bonuses:postgresDB:GetWithdrawals] start transaction for userID '%d'", userID)
 	errMsg := "get withdrawals from db: %w"
 	tx, err := p.database.BeginTx(ctx, nil)
