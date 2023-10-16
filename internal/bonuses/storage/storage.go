@@ -32,6 +32,7 @@ func (s *Storage) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 		return fmt.Errorf("get userID '%d' bonuses balance: %w", withdrawal.UserID, err)
 	}
 
+	//TODO: to remove
 	if balance == nil {
 		if err = s.manager.AddBonuses(ctx, withdrawal.UserID, 0); err != nil {
 			return fmt.Errorf("init bonuses for userID '%d': %w", withdrawal.UserID, err)

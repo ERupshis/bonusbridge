@@ -39,7 +39,8 @@ func main() {
 
 	ctxWithCancel, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	dbMutex := &sync.RWMutex{}
+	dbMutex := &sync.RWMutex{} //TODO: remove
+	//TODO: create just one connection to DB and share it.
 
 	//authentication.
 	usersStorage, err := postgresUsers.Create(ctxWithCancel, cfg, dbMutex, log)
@@ -77,9 +78,14 @@ func main() {
 	router := chi.NewRouter()
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
-	router.Mount("/api/user/orders", authController.AuthorizeUser(ordersController.Route(), data.RoleUser))
-	router.Mount("/api/user/balance", authController.AuthorizeUser(bonusesController.RouteBonuses(), data.RoleUser))
-	router.Mount("/api/user/withdrawals", authController.AuthorizeUser(bonusesController.RouteWithdrawals(), data.RoleUser))
+
+	router.Group(func(r chi.Router) {
+		r.Use(authController.AuthorizeUser(data.RoleUser))
+
+		r.Mount("/api/user/orders", ordersController.Route())
+		r.Mount("/api/user/balance", bonusesController.RouteBonuses())
+		r.Mount("/api/user/withdrawals", bonusesController.RouteWithdrawals())
+	})
 
 	go func() {
 		log.Info("server is launching with Host setting: %s", cfg.HostAddr)
