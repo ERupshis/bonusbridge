@@ -67,6 +67,8 @@ func main() {
 
 	//controllers mounting.
 	router := chi.NewRouter()
+	router.Use(log.LogHandler)
+
 	router.Mount("/api/user/register", authController.RouteRegister())
 	router.Mount("/api/user/login", authController.RouteLoginer())
 
