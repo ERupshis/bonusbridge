@@ -56,7 +56,7 @@ func main() {
 	ordersController := orders.CreateController(ordersStrg, log)
 
 	//bonuses.
-	bonusesManager, err := postgresBonuses.Create(databaseConn, log)
+	bonusesManager := postgresBonuses.Create(databaseConn, log)
 	bonusesStrg := bonusesStorage.Create(bonusesManager, log)
 	bonusesController := bonuses.CreateController(bonusesStrg, log)
 

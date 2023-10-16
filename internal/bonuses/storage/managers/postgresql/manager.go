@@ -25,11 +25,11 @@ type manager struct {
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(dbConn *dbconn.DBConn, log logger.BaseLogger) (managers.BaseBonusesManager, error) {
+func Create(dbConn *dbconn.DBConn, log logger.BaseLogger) managers.BaseBonusesManager {
 	return &manager{
 		DBConn: dbConn,
 		log:    log,
-	}, nil
+	}
 }
 
 func (p *manager) AddBonuses(ctx context.Context, userID int64, count float32) error {
