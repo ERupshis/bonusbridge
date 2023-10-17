@@ -8,8 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/erupshis/bonusbridge/internal/accrual"
-	"github.com/erupshis/bonusbridge/internal/accrual/client"
 	"github.com/erupshis/bonusbridge/internal/auth"
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
@@ -61,9 +59,9 @@ func main() {
 	bonusesController := bonuses.CreateController(bonusesStrg, log)
 
 	//accrual(orders update) system.
-	requestClient := client.CreateDefault(log)
-	accrualController := accrual.CreateController(ordersStrg, bonusesStrg, requestClient, cfg, log)
-	accrualController.Run(ctxWithCancel, 5)
+	//requestClient := client.CreateDefault(log)
+	//accrualController := accrual.CreateController(ordersStrg, bonusesStrg, requestClient, cfg, log)
+	//accrualController.Run(ctxWithCancel, 5)
 
 	//controllers mounting.
 	router := chi.NewRouter()

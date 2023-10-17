@@ -7,8 +7,8 @@ import (
 
 	"github.com/erupshis/bonusbridge/internal/bonuses/data"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers"
-	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/bonuses"
-	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/withdrawals"
+	bonusesQueries "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/bonuses"
+	withdrawalsQueries "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/withdrawals"
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
@@ -32,63 +32,48 @@ func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseBonusesManager 
 	}
 }
 
-func (p *manager) AddBonuses(ctx context.Context, userID int64, count float32) error {
-	p.log.Info("[bonuses:manager:AddBonuses] start transaction for userID '%d', count '%f'", userID, count)
-	errMsg := "add bonuses in db: %w"
-	tx, err := p.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf(errMsg, err)
-	}
-
-	bonusesArr, err := bonuses.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
-	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return fmt.Errorf(errMsg, err)
-	}
-
-	if len(bonusesArr) == 0 {
-		if err = bonuses.Insert(ctx, tx, userID, count, p.log); err != nil {
-			helpers.ExecuteWithLogError(tx.Rollback, p.log)
-			return fmt.Errorf(errMsg, err)
-		}
-	} else {
-		if err = bonuses.UpdateByID(ctx, tx, bonusesArr[0].ID, map[string]interface{}{"balance": bonusesArr[0].Current + count}, p.log); err != nil {
-			helpers.ExecuteWithLogError(tx.Rollback, p.log)
-			return fmt.Errorf(errMsg, err)
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf(errMsg, err)
-	}
-
-	p.log.Info("[bonuses:manager:AddBonuses] transaction successful")
-	return nil
-}
-
-func (p *manager) GetBalance(ctx context.Context, userID int64) (*data.Balance, error) {
-	p.log.Info("[bonuses:manager:GetBalance] start transaction for userID '%d'", userID)
+func (p *manager) GetBalanceDif(ctx context.Context, userID int64) (float32, error) {
+	p.log.Info("[bonuses:manager:GetBalanceDif] start transaction for userID '%d'", userID)
 	errMsg := "get bonuses balance in db: %w"
 	tx, err := p.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
+		return -1.0, fmt.Errorf(errMsg, err)
 	}
 
-	bonusesArr, err := bonuses.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
+	bonusesDif, err := bonusesQueries.SelectDifByUserID(ctx, tx, userID, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return nil, fmt.Errorf(errMsg, err)
+		return -1.0, fmt.Errorf(errMsg, err)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, fmt.Errorf(errMsg, err)
+		return -1.0, fmt.Errorf(errMsg, err)
+	}
+
+	p.log.Info("[bonuses:manager:GetBalanceDif] transaction successful")
+	return bonusesDif, nil
+}
+
+func (p *manager) GetBalance(ctx context.Context, income bool, userID int64) (float32, error) {
+	p.log.Info("[bonuses:manager:GetBalance] start transaction for userID '%d' for income? '%t'", userID, income)
+	errMsg := "get bonuses income sum in db: %w"
+	tx, err := p.BeginTx(ctx, nil)
+	if err != nil {
+		return -1.0, fmt.Errorf(errMsg, err)
+	}
+
+	bonusesIncome, err := bonusesQueries.SelectInOutSumByUserID(ctx, tx, income, userID, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return -1.0, fmt.Errorf(errMsg, err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return -1.0, fmt.Errorf(errMsg, err)
 	}
 
 	p.log.Info("[bonuses:manager:GetBalance] transaction successful")
-	if len(bonusesArr) == 0 {
-		return nil, nil
-	}
-	return &bonusesArr[0], nil
+	return bonusesIncome, nil
 }
 
 func (p *manager) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdrawal) error {
@@ -99,31 +84,13 @@ func (p *manager) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 		return fmt.Errorf(errMsg, err)
 	}
 
-	bonusesArr, err := bonuses.Select(ctx, tx, map[string]interface{}{"user_id": withdrawal.UserID}, p.log)
+	withdrawal.BonusID, err = bonusesQueries.Insert(ctx, tx, withdrawal.UserID, -withdrawal.Sum, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
 	}
 
-	if len(bonusesArr) == 0 {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return fmt.Errorf(errMsg, fmt.Errorf("bonuses record wasn't found for userID '%d'", withdrawal.UserID))
-	}
-
-	bonusesArr[0].Current -= withdrawal.Sum
-	bonusesArr[0].Withdrawn += withdrawal.Sum
-
-	valuesToUpdate := map[string]interface{}{
-		"balance":   bonusesArr[0].Current,
-		"withdrawn": bonusesArr[0].Withdrawn,
-	}
-
-	if err = bonuses.UpdateByID(ctx, tx, bonusesArr[0].ID, valuesToUpdate, p.log); err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return fmt.Errorf(errMsg, err)
-	}
-
-	if err = withdrawals.Insert(ctx, tx, withdrawal, p.log); err != nil {
+	if err = withdrawalsQueries.Insert(ctx, tx, withdrawal, p.log); err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
 	}
@@ -144,7 +111,7 @@ func (p *manager) GetWithdrawals(ctx context.Context, userID int64) ([]data.With
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	withdrawalsArr, err := withdrawals.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
+	withdrawalsArr, err := withdrawalsQueries.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)

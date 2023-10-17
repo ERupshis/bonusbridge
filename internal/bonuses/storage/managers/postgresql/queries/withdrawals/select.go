@@ -77,14 +77,20 @@ func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log
 func createSelectWithdrawalsStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
+	bonusesJoin := fmt.Sprintf("LEFT JOIN %s ON %[1]s.id = %s.bonus_id",
+		dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable),
+		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable),
+	)
+
 	builder := psql.Select(
-		"id",
-		"user_id",
-		"order_num",
-		"sum",
-		"processed_at",
+		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)+".id",
+		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)+".user_id",
+		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)+".order_num",
+		fmt.Sprintf("ABS(%s) AS sum", dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)+".count"),
+		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)+".processed_at",
 	).
-		From(dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable))
+		From(dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)).
+		JoinClause(bonusesJoin)
 
 	for key := range filters {
 		builder = builder.Where(sq.Eq{key: "?"})

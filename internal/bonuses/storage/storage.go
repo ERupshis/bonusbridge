@@ -22,26 +22,14 @@ func Create(manager managers.BaseBonusesManager, baseLogger logger.BaseLogger) S
 	}
 }
 
-func (s *Storage) AddBonuses(ctx context.Context, userID int64, count float32) error {
-	return s.manager.AddBonuses(ctx, userID, count)
-}
-
 func (s *Storage) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdrawal) error {
-	balance, err := s.manager.GetBalance(ctx, withdrawal.UserID)
+	balanceDif, err := s.manager.GetBalanceDif(ctx, withdrawal.UserID)
 	if err != nil {
 		return fmt.Errorf("get userID '%d' bonuses balance: %w", withdrawal.UserID, err)
 	}
 
-	//TODO: to remove
-	if balance == nil {
-		if err = s.manager.AddBonuses(ctx, withdrawal.UserID, 0); err != nil {
-			return fmt.Errorf("init bonuses for userID '%d': %w", withdrawal.UserID, err)
-		}
-		balance = &data.Balance{UserID: withdrawal.UserID}
-	}
-
-	if balance.Current < withdrawal.Sum {
-		return fmt.Errorf("userID '%d' balance '%f' is not enough for withdrawn: %w", withdrawal.UserID, balance.Current, data.ErrNotEnoughBonuses)
+	if balanceDif < withdrawal.Sum {
+		return fmt.Errorf("userID '%d' balance '%f' is not enough for withdrawn: %w", withdrawal.UserID, balanceDif, data.ErrNotEnoughBonuses)
 	}
 
 	if err = s.manager.WithdrawBonuses(ctx, withdrawal); err != nil {
@@ -52,19 +40,24 @@ func (s *Storage) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 }
 
 func (s *Storage) GetBalance(ctx context.Context, userID int64) (*data.Balance, error) {
-	balance, err := s.manager.GetBalance(ctx, userID)
+	var res data.Balance
+
+	var err error
+	res.Current, err = s.manager.GetBalance(ctx, true, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get userID '%d' bonuses balance: %w", userID, err)
 	}
 
-	if balance == nil {
-		if err = s.AddBonuses(ctx, userID, 0); err != nil {
-			return nil, fmt.Errorf("init balance for userID '%d': %w", userID, err)
-		}
-		balance = &data.Balance{UserID: userID}
+	res.Withdrawn, err = s.manager.GetBalance(ctx, false, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get userID '%d' bonuses balance: %w", userID, err)
 	}
 
-	return balance, nil
+	if res.Withdrawn < 0 {
+		res.Withdrawn = -res.Withdrawn
+	}
+
+	return &res, nil
 }
 
 func (s *Storage) GetWithdrawals(ctx context.Context, userID int64) ([]data.Withdrawal, error) {

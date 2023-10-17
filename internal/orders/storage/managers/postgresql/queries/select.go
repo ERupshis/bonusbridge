@@ -6,17 +6,18 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	dbBonusesData "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
-	dbData "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/data"
+	dbOrdersData "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
-// SelectOrders performs direct query request to database to select orders satisfying filters.
-func SelectOrders(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.Order, error) {
-	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbData.OrdersTable) + ": %w"
+// Select performs direct query request to database to select orders satisfying filters.
+func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.Order, error) {
+	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbOrdersData.OrdersTable) + ": %w"
 
 	stmt, err := createSelectOrdersStmt(ctx, tx, filters)
 	if err != nil {
@@ -75,34 +76,44 @@ func SelectOrders(ctx context.Context, tx *sql.Tx, filters map[string]interface{
 func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	statusesJoin := fmt.Sprintf("LEFT JOIN %s ON %[1]s.id = %s.status_id", dbData.GetTableFullName(dbData.StatusesTable), dbData.GetTableFullName(dbData.OrdersTable))
+	statusesJoin := fmt.Sprintf("RIGHT JOIN %s ON %[1]s.id = %s.status_id",
+		dbOrdersData.GetTableFullName(dbOrdersData.StatusesTable),
+		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable),
+	)
+	bonusesJoin := fmt.Sprintf("RIGHT JOIN %s ON %[1]s.id = %s.bonus_id",
+		dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable),
+		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable),
+	)
+
 	builder := psql.Select(
-		dbData.GetTableFullName(dbData.OrdersTable)+".id",
-		"num",
-		"user_id",
-		dbData.GetTableFullName(dbData.StatusesTable)+".status",
-		"accrual",
-		"uploaded_at",
+		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)+".id",
+		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)+".num",
+		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)+".user_id",
+		dbOrdersData.GetTableFullName(dbOrdersData.StatusesTable)+".status",
+		dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)+".count",
+		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)+".uploaded_at",
 	).
-		From(dbData.GetTableFullName(dbData.OrdersTable)).
-		JoinClause(statusesJoin)
+		From(dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)).
+		JoinClause(statusesJoin).
+		JoinClause(bonusesJoin)
+
 	if len(filters) != 0 {
 		for key := range filters {
 			switch key {
 			case "id":
-				key = dbData.GetTableFullName(dbData.OrdersTable) + ".id"
+				key = dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable) + ".id"
 			case "number":
-				key = dbData.GetTableFullName(dbData.OrdersTable) + ".num"
+				key = dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable) + ".num"
 			case "user_id":
-				key = dbData.GetTableFullName(dbData.OrdersTable) + ".user_id"
+				key = dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable) + ".user_id"
 			case "status_id":
-				key = dbData.GetTableFullName(dbData.OrdersTable) + ".status_id"
+				key = dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable) + ".status_id"
 			case "status":
-				key = dbData.GetTableFullName(dbData.StatusesTable) + ".status"
+				key = dbOrdersData.GetTableFullName(dbOrdersData.StatusesTable) + ".status"
 			case "accrual":
-				key = dbData.GetTableFullName(dbData.OrdersTable) + ".accrual"
+				key = dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable) + ".count"
 			case "uploaded_at":
-				key = dbData.GetTableFullName(dbData.OrdersTable) + ".uploaded_at"
+				key = dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable) + ".uploaded_at"
 			}
 			builder = builder.Where(sq.Eq{key: "?"})
 		}
@@ -110,7 +121,7 @@ func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbData.GetTableFullName(dbData.OrdersTable), err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable), err)
 	}
 	return tx.PrepareContext(ctx, psqlSelect)
 }

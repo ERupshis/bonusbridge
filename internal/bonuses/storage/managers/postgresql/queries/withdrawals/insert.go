@@ -29,11 +29,11 @@ func Insert(ctx context.Context, tx *sql.Tx, withdrawal *data.Withdrawal, log lo
 	defer helpers.ExecuteWithLogError(stmt.Close, log)
 
 	query := func(context context.Context) error {
-		_, err := stmt.ExecContext(
+		_, err = stmt.ExecContext(
 			context,
 			withdrawal.UserID,
 			withdrawal.Order,
-			withdrawal.Sum,
+			withdrawal.BonusID,
 			withdrawal.ProcessedAt,
 		)
 

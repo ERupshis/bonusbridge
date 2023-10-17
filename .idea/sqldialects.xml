@@ -7,6 +7,7 @@
     <file url="file://$PROJECT_DIR$/db/migrations/000002_bonuses.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/db/migrations/000003_orders.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/db/migrations/000003_orders.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db/migrations/000004_withdrawals.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/db/migrations/000004_withdrawals.up.sql" dialect="PostgreSQL" />
   </component>
   <component name="SqlResolveMappings">

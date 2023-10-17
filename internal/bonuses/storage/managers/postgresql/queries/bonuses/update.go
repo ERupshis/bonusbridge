@@ -25,7 +25,7 @@ func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 	}
 	valuesToUpdate = append(valuesToUpdate, id)
 
-	stmt, err := createUpdateBonusesByIDStmt(ctx, tx, columnsToUpdate)
+	stmt, err := createUpdateByIDStmt(ctx, tx, columnsToUpdate)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -52,8 +52,8 @@ func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 	return nil
 }
 
-// createUpdateBonusesByIDStmt generates statement for update query.
-func createUpdateBonusesByIDStmt(ctx context.Context, tx *sql.Tx, values []string) (*sql.Stmt, error) {
+// createUpdateByIDStmt generates statement for update query.
+func createUpdateByIDStmt(ctx context.Context, tx *sql.Tx, values []string) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	builder := psql.Update(data.GetTableFullName(data.BonusesTable))

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/erupshis/bonusbridge/internal/bonuses/data"
 	dbBonusesData "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
@@ -14,26 +13,20 @@ import (
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
-// Select performs direct query request to database to select bonuses satisfying filters.
-func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.Balance, error) {
-	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)) + ": %w"
+func SelectDifByUserID(ctx context.Context, tx *sql.Tx, userID int64, log logger.BaseLogger) (float32, error) {
+	errMsg := fmt.Sprintf("select bonuses balance for userID '%d' in '%s'", userID, dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)) + ": %w"
 
-	stmt, err := createSelectStmt(ctx, tx, filters)
+	stmt, err := createSelectDifByUserIDStmt(ctx, tx, userID)
 	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
+		return -1.0, fmt.Errorf(errMsg, err)
 	}
 	defer helpers.ExecuteWithLogError(stmt.Close, log)
-
-	var valuesToUpdate []interface{}
-	for _, val := range filters {
-		valuesToUpdate = append(valuesToUpdate, val)
-	}
 
 	var rows *sql.Rows
 	query := func(context context.Context) error {
 		rows, err = stmt.QueryContext(
 			context,
-			valuesToUpdate...,
+			userID,
 		)
 
 		if err == nil {
@@ -46,44 +39,31 @@ func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log
 	}
 	err = retryer.RetryCallWithTimeoutErrorOnly(ctx, log, []int{1, 1, 3}, db.DatabaseErrorsToRetry, query)
 	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
+		return -1.0, fmt.Errorf(errMsg, err)
 	}
 
 	defer helpers.ExecuteWithLogError(rows.Close, log)
-	var res []data.Balance
+	var res float32
 	for rows.Next() {
-		order := data.Balance{}
-		err := rows.Scan(
-			&order.ID,
-			&order.UserID,
-			&order.Current,
-			&order.Withdrawn,
+		err = rows.Scan(
+			&res,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("parse db result: %w", err)
+			return -1.0, fmt.Errorf("parse db result: %w", err)
 		}
-
-		res = append(res, order)
 	}
 
 	return res, nil
 }
 
 // createSelectStmt generates statement for select query.
-func createSelectStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) (*sql.Stmt, error) {
+func createSelectDifByUserIDStmt(ctx context.Context, tx *sql.Tx, userID int64) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	builder := psql.Select(
-		"id",
-		"user_id",
-		"count",
-	).
-		From(dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable))
-
-	for key := range filters {
-		builder = builder.Where(sq.Eq{key: "?"})
-	}
-	psqlSelect, _, err := builder.ToSql()
+	psqlSelect, _, err := psql.Select("SUM(count) as total").
+		From(dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)).
+		Where(sq.Eq{"user_id": userID}).
+		ToSql()
 
 	if err != nil {
 		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable), err)

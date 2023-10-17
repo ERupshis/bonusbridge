@@ -14,8 +14,8 @@ import (
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
-// InsertOrder performs direct query request to database to add new order.
-func InsertOrder(ctx context.Context, tx *sql.Tx, orderData *data.Order, log logger.BaseLogger) (int64, error) {
+// Insert performs direct query request to database to add new order.
+func Insert(ctx context.Context, tx *sql.Tx, orderData *data.Order, log logger.BaseLogger) (int64, error) {
 	errMsg := fmt.Sprintf("insert order '%v' in '%s'", *orderData, dbData.OrdersTable) + ": %w"
 
 	stmt, err := createInsertOrderStmt(ctx, tx)
@@ -26,14 +26,14 @@ func InsertOrder(ctx context.Context, tx *sql.Tx, orderData *data.Order, log log
 
 	newOrderID := int64(0)
 	query := func(context context.Context) error {
-		_, err := stmt.ExecContext(
+		err := stmt.QueryRowContext(
 			context,
 			orderData.Number,
 			data.GetOrderStatusID(orderData.Status),
 			orderData.UserID,
-			0,
+			orderData.BonusID,
 			orderData.UploadedAt,
-		)
+		).Scan(&newOrderID)
 
 		return err
 	}
@@ -52,6 +52,7 @@ func createInsertOrderStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
 	psqlInsert, _, err := psql.Insert(dbData.GetTableFullName(dbData.OrdersTable)).
 		Columns(dbData.ColumnsInOrdersTable...).
 		Values(make([]interface{}, len(dbData.ColumnsInOrdersTable))...).
+		Suffix("RETURNING id").
 		ToSql()
 
 	if err != nil {

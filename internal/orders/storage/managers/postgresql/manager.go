@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	bonusesQueries "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/bonuses"
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
 	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
-	"github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/queries"
+	ordersQueries "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/queries"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
@@ -31,22 +32,28 @@ func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseOrdersManager {
 }
 
 func (p *manager) AddOrder(ctx context.Context, number string, userID int64) (int64, error) {
-	newOrder := &data.Order{
-		Number:     number,
-		UserID:     userID,
-		Status:     "NEW",
-		Accrual:    0.0,
-		UploadedAt: time.Now(),
-	}
-
 	p.log.Info("[orders:manager:AddOrder] start transaction for order '%s', userID '%d'", number, userID)
 	errMsg := "add order in db: %w"
+
 	tx, err := p.BeginTx(ctx, nil)
 	if err != nil {
 		return -1, fmt.Errorf(errMsg, err)
 	}
 
-	id, err := queries.InsertOrder(ctx, tx, newOrder, p.log)
+	bonusID, err := bonusesQueries.Insert(ctx, tx, userID, 0, p.log)
+	if err != nil {
+		return -1, fmt.Errorf(errMsg, err)
+	}
+
+	newOrder := &data.Order{
+		Number:     number,
+		UserID:     userID,
+		Status:     "NEW",
+		BonusID:    bonusID,
+		UploadedAt: time.Now(),
+	}
+
+	id, err := ordersQueries.Insert(ctx, tx, newOrder, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return -1, fmt.Errorf(errMsg, err)
@@ -69,17 +76,21 @@ func (p *manager) UpdateOrder(ctx context.Context, order *data.Order) error {
 		return fmt.Errorf(errMsg, err)
 	}
 
-	valuesToUpdate := map[string]interface{}{
+	ordersValuesToUpdate := map[string]interface{}{
 		"status_id": data.GetOrderStatusID(order.Status),
-		"accrual":   order.Accrual,
 	}
-
-	err = queries.UpdateByID(ctx, tx, int64(order.ID), valuesToUpdate, p.log)
-	if err != nil {
+	if err = ordersQueries.UpdateByID(ctx, tx, int64(order.ID), ordersValuesToUpdate, p.log); err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
 	}
 
+	bonusesValuesToUpdate := map[string]interface{}{
+		"count": order.Accrual,
+	}
+	if err = bonusesQueries.UpdateByID(ctx, tx, order.BonusID, bonusesValuesToUpdate, p.log); err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, err)
+	}
 	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
@@ -97,7 +108,7 @@ func (p *manager) GetOrder(ctx context.Context, number string) (*data.Order, err
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	orders, err := queries.SelectOrders(ctx, tx, map[string]interface{}{"number": number}, p.log)
+	orders, err := ordersQueries.Select(ctx, tx, map[string]interface{}{"number": number}, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
@@ -125,7 +136,7 @@ func (p *manager) GetOrders(ctx context.Context, filters map[string]interface{})
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	orders, err := queries.SelectOrders(ctx, tx, filters, p.log)
+	orders, err := ordersQueries.Select(ctx, tx, filters, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
