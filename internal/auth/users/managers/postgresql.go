@@ -97,13 +97,13 @@ func (p *manager) getUser(ctx context.Context, filters map[string]interface{}) (
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	users, err := users.Select(ctx, tx, filters, p.log)
+	usersSelected, err := users.Select(ctx, tx, filters, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	if len(users) > 1 {
+	if len(usersSelected) > 1 {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf("user is not found in db or few users has the same login")
 	}
@@ -115,10 +115,10 @@ func (p *manager) getUser(ctx context.Context, filters map[string]interface{}) (
 
 	p.log.Info("[users:manager:getUser] transaction successful")
 
-	if len(users) == 0 {
+	if len(usersSelected) == 0 {
 		return nil, nil
 	}
-	return &users[0], nil
+	return &usersSelected[0], nil
 }
 
 //password := "user_password" // Replace with the actual password provided by the user
