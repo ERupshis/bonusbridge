@@ -1,12 +1,11 @@
 // Package postgresql postgresql handling PostgreSQL database.
-package postgresql
+package managers
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/bonuses/data"
-	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers"
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/db/queries/bonuses"
 	"github.com/erupshis/bonusbridge/internal/db/queries/withdrawals"
@@ -25,7 +24,7 @@ type manager struct {
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseBonusesManager {
+func Create(dbConn *db.Conn, log logger.BaseLogger) BaseBonusesManager {
 	return &manager{
 		Conn: dbConn,
 		log:  log,

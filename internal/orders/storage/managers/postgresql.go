@@ -1,5 +1,5 @@
 // Package postgresql postgresql handling PostgreSQL database.
-package postgresql
+package managers
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
-	"github.com/erupshis/bonusbridge/internal/orders/storage/managers"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
@@ -24,7 +23,7 @@ type manager struct {
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseOrdersManager {
+func Create(dbConn *db.Conn, log logger.BaseLogger) BaseOrdersManager {
 	return &manager{
 		Conn: dbConn,
 		log:  log,

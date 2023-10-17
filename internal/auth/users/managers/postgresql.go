@@ -1,11 +1,10 @@
-package postgresql
+package managers
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
-	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/db/queries/users"
 	"github.com/erupshis/bonusbridge/internal/helpers"
@@ -21,7 +20,7 @@ type manager struct {
 }
 
 // Create creates manager implementation. Supports migrations and check connection to database.
-func Create(dbConn *db.Conn, log logger.BaseLogger) managers.BaseUsersManager {
+func Create(dbConn *db.Conn, log logger.BaseLogger) BaseUsersManager {
 	return &manager{
 		Conn: dbConn,
 		log:  log,
