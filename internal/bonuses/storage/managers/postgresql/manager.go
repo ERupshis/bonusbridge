@@ -7,9 +7,9 @@ import (
 
 	"github.com/erupshis/bonusbridge/internal/bonuses/data"
 	"github.com/erupshis/bonusbridge/internal/bonuses/storage/managers"
-	bonusesQueries "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/bonuses"
-	withdrawalsQueries "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/queries/withdrawals"
 	"github.com/erupshis/bonusbridge/internal/db"
+	"github.com/erupshis/bonusbridge/internal/db/queries/bonuses"
+	"github.com/erupshis/bonusbridge/internal/db/queries/withdrawals"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -40,7 +40,7 @@ func (p *manager) GetBalanceDif(ctx context.Context, userID int64) (float32, err
 		return -1.0, fmt.Errorf(errMsg, err)
 	}
 
-	bonusesDif, err := bonusesQueries.SelectSumByUserID(ctx, tx, bonusesQueries.SumTotal, userID, p.log)
+	bonusesDif, err := bonuses.SelectSumByUserID(ctx, tx, bonuses.SumTotal, userID, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return -1.0, fmt.Errorf(errMsg, err)
@@ -64,12 +64,12 @@ func (p *manager) GetBalance(ctx context.Context, income bool, userID int64) (fl
 
 	var filter int
 	if income {
-		filter = bonusesQueries.SumIn
+		filter = bonuses.SumIn
 	} else {
-		filter = bonusesQueries.SumOut
+		filter = bonuses.SumOut
 	}
 
-	bonusesIncome, err := bonusesQueries.SelectSumByUserID(ctx, tx, filter, userID, p.log)
+	bonusesIncome, err := bonuses.SelectSumByUserID(ctx, tx, filter, userID, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return -1.0, fmt.Errorf(errMsg, err)
@@ -91,7 +91,7 @@ func (p *manager) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 		return fmt.Errorf(errMsg, err)
 	}
 
-	bonusesDif, err := bonusesQueries.SelectSumByUserID(ctx, tx, bonusesQueries.SumTotal, withdrawal.UserID, p.log)
+	bonusesDif, err := bonuses.SelectSumByUserID(ctx, tx, bonuses.SumTotal, withdrawal.UserID, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
@@ -101,13 +101,13 @@ func (p *manager) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 		return fmt.Errorf("userID '%d' balance '%f' is not enough for withdrawn: %w", withdrawal.UserID, bonusesDif, data.ErrNotEnoughBonuses)
 	}
 
-	withdrawal.BonusID, err = bonusesQueries.Insert(ctx, tx, withdrawal.UserID, -withdrawal.Sum, p.log)
+	withdrawal.BonusID, err = bonuses.Insert(ctx, tx, withdrawal.UserID, -withdrawal.Sum, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
 	}
 
-	if err = withdrawalsQueries.Insert(ctx, tx, withdrawal, p.log); err != nil {
+	if err = withdrawals.Insert(ctx, tx, withdrawal, p.log); err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
 	}
@@ -128,7 +128,7 @@ func (p *manager) GetWithdrawals(ctx context.Context, userID int64) ([]data.With
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	withdrawalsArr, err := withdrawalsQueries.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
+	withdrawalsArr, err := withdrawals.Select(ctx, tx, map[string]interface{}{"user_id": userID}, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)

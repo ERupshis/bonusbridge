@@ -1,4 +1,4 @@
-package data
+package bonuses
 
 const (
 	SchemaName       = "bonuses"

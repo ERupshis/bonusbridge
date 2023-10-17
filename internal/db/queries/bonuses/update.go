@@ -1,4 +1,4 @@
-package queries
+package bonuses
 
 import (
 	"context"
@@ -9,13 +9,12 @@ import (
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
-	"github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
-// UpdateByID performs direct query request to database to edit existing order's record.
+// UpdateByID performs direct query request to database to edit existing bonuses record.
 func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]interface{}, log logger.BaseLogger) error {
-	errMsg := fmt.Sprintf("update partially order by id '%d' with data '%v' in '%s'", id, values, data.GetTableFullName(data.OrdersTable)) + ": %w"
+	errMsg := fmt.Sprintf("update partially bonus by id '%d' with data '%v' in '%s'", id, values, GetTableFullName(BonusesTable)) + ": %w"
 
 	var columnsToUpdate []string
 	var valuesToUpdate []interface{}
@@ -25,7 +24,7 @@ func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 	}
 	valuesToUpdate = append(valuesToUpdate, id)
 
-	stmt, err := createUpdateOrderByIDStmt(ctx, tx, columnsToUpdate)
+	stmt, err := createUpdateByIDStmt(ctx, tx, columnsToUpdate)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -52,11 +51,11 @@ func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 	return nil
 }
 
-// createUpdateOrderByIDStmt generates statement for update query.
-func createUpdateOrderByIDStmt(ctx context.Context, tx *sql.Tx, values []string) (*sql.Stmt, error) {
+// createUpdateByIDStmt generates statement for update query.
+func createUpdateByIDStmt(ctx context.Context, tx *sql.Tx, values []string) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	builder := psql.Update(data.GetTableFullName(data.OrdersTable))
+	builder := psql.Update(GetTableFullName(BonusesTable))
 	for _, col := range values {
 		builder = builder.Set(col, "?")
 	}
@@ -64,7 +63,7 @@ func createUpdateOrderByIDStmt(ctx context.Context, tx *sql.Tx, values []string)
 	psqlUpdate, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql update statement for '%s': %w", data.GetTableFullName(data.OrdersTable), err)
+		return nil, fmt.Errorf("squirrel sql update statement for '%s': %w", GetTableFullName(BonusesTable), err)
 
 	}
 	return tx.PrepareContext(ctx, psqlUpdate)

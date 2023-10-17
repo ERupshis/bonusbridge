@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	dbBonusesData "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
@@ -20,7 +19,7 @@ const (
 )
 
 func SelectSumByUserID(ctx context.Context, tx *sql.Tx, filter int, userID int64, log logger.BaseLogger) (float32, error) {
-	errMsg := fmt.Sprintf("select bonuses balance for userID '%d' in '%s'", userID, dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)) + ": %w"
+	errMsg := fmt.Sprintf("select bonuses balance for userID '%d' in '%s'", userID, GetTableFullName(BonusesTable)) + ": %w"
 
 	stmt, err := createSelectSumByUserIDStmt(ctx, tx, filter)
 	if err != nil {
@@ -67,7 +66,7 @@ func createSelectSumByUserIDStmt(ctx context.Context, tx *sql.Tx, filter int) (*
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	builder := psql.Select("SUM(count)").
-		From(dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)).
+		From(GetTableFullName(BonusesTable)).
 		Where(sq.Eq{"user_id": 0})
 
 	switch filter {
@@ -82,7 +81,7 @@ func createSelectSumByUserIDStmt(ctx context.Context, tx *sql.Tx, filter int) (*
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable), err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", GetTableFullName(BonusesTable), err)
 	}
 	return tx.PrepareContext(ctx, psqlSelect)
 }

@@ -1,4 +1,4 @@
-package queries
+package orders
 
 import (
 	"context"
@@ -10,13 +10,12 @@ import (
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
-	dbData "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
 // Insert performs direct query request to database to add new order.
 func Insert(ctx context.Context, tx *sql.Tx, orderData *data.Order, log logger.BaseLogger) (int64, error) {
-	errMsg := fmt.Sprintf("insert order '%v' in '%s'", *orderData, dbData.OrdersTable) + ": %w"
+	errMsg := fmt.Sprintf("insert order '%v' in '%s'", *orderData, OrdersTable) + ": %w"
 
 	stmt, err := createInsertOrderStmt(ctx, tx)
 	if err != nil {
@@ -49,14 +48,14 @@ func Insert(ctx context.Context, tx *sql.Tx, orderData *data.Order, log logger.B
 func createInsertOrderStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	psqlInsert, _, err := psql.Insert(dbData.GetTableFullName(dbData.OrdersTable)).
-		Columns(dbData.ColumnsInOrdersTable...).
-		Values(make([]interface{}, len(dbData.ColumnsInOrdersTable))...).
+	psqlInsert, _, err := psql.Insert(GetTableFullName(OrdersTable)).
+		Columns(ColumnsInOrdersTable...).
+		Values(make([]interface{}, len(ColumnsInOrdersTable))...).
 		Suffix("RETURNING id").
 		ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", dbData.GetTableFullName(dbData.OrdersTable), err)
+		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", GetTableFullName(OrdersTable), err)
 	}
 	return tx.PrepareContext(ctx, psqlInsert)
 }

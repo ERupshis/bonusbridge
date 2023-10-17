@@ -7,8 +7,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/erupshis/bonusbridge/internal/bonuses/data"
-	dbBonusesData "github.com/erupshis/bonusbridge/internal/bonuses/storage/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/db"
+	dbBonusesData "github.com/erupshis/bonusbridge/internal/db/queries/bonuses"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/retryer"

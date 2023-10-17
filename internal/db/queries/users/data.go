@@ -1,4 +1,4 @@
-package data
+package users
 
 const (
 	SchemaName = "users"

@@ -1,4 +1,4 @@
-package queries
+package users
 
 import (
 	"context"
@@ -7,16 +7,15 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
-	dbUsersData "github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql/data"
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/retryer"
 )
 
-// SelectUsers performs direct query request to database to select users satisfying filters.
-func SelectUsers(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.User, error) {
-	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, dbUsersData.GetTableFullName(dbUsersData.UsersTable)) + ": %w"
+// Select performs direct query request to database to select users satisfying filters.
+func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.User, error) {
+	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, GetTableFullName(UsersTable)) + ": %w"
 
 	stmt, err := createSelectUsersStmt(ctx, tx, filters)
 	if err != nil {
@@ -79,7 +78,7 @@ func createSelectUsersStmt(ctx context.Context, tx *sql.Tx, filters map[string]i
 		"password",
 		"role_id",
 	).
-		From(dbUsersData.GetTableFullName(dbUsersData.UsersTable))
+		From(GetTableFullName(UsersTable))
 	if len(filters) != 0 {
 		for key := range filters {
 			builder = builder.Where(sq.Eq{key: "?"})
@@ -88,7 +87,7 @@ func createSelectUsersStmt(ctx context.Context, tx *sql.Tx, filters map[string]i
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbUsersData.GetTableFullName(dbUsersData.UsersTable), err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", GetTableFullName(UsersTable), err)
 	}
 	return tx.PrepareContext(ctx, psqlSelect)
 }

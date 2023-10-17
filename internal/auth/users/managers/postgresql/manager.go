@@ -6,8 +6,8 @@ import (
 
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
 	"github.com/erupshis/bonusbridge/internal/auth/users/managers"
-	"github.com/erupshis/bonusbridge/internal/auth/users/managers/postgresql/queries"
 	"github.com/erupshis/bonusbridge/internal/db"
+	"github.com/erupshis/bonusbridge/internal/db/queries/users"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
@@ -36,7 +36,7 @@ func (p *manager) AddUser(ctx context.Context, user *data.User) (int64, error) {
 		return -1, fmt.Errorf(errMsg, err)
 	}
 
-	err = queries.InsertUser(ctx, tx, user, p.log)
+	err = users.Insert(ctx, tx, user, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return -1, fmt.Errorf(errMsg, err)
@@ -98,7 +98,7 @@ func (p *manager) getUser(ctx context.Context, filters map[string]interface{}) (
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	users, err := queries.SelectUsers(ctx, tx, filters, p.log)
+	users, err := users.Select(ctx, tx, filters, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
