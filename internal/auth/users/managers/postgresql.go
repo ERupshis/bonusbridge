@@ -121,6 +121,7 @@ func (p *manager) getUser(ctx context.Context, filters map[string]interface{}) (
 	return &usersSelected[0], nil
 }
 
+//TODO: hash password in db.
 //password := "user_password" // Replace with the actual password provided by the user
 //
 //// Hash and salt the password

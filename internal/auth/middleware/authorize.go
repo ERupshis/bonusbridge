@@ -25,7 +25,7 @@ func AuthorizeUser(h http.Handler, userRoleRequirement int, usersStorage manager
 
 		token := strings.Split(authHeader, " ")
 		if len(token) != 2 || token[0] != "Bearer" {
-			log.Info("[auth:middleware:Authorize] invalid invalid token")
+			log.Info("[auth:middleware:Authorize] invalid token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
