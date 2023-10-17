@@ -84,6 +84,16 @@ func (p *manager) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 		return fmt.Errorf(errMsg, err)
 	}
 
+	bonusesDif, err := bonusesQueries.SelectDifByUserID(ctx, tx, withdrawal.UserID, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, err)
+	}
+
+	if bonusesDif < withdrawal.Sum {
+		return fmt.Errorf("userID '%d' balance '%f' is not enough for withdrawn: %w", withdrawal.UserID, bonusesDif, data.ErrNotEnoughBonuses)
+	}
+
 	withdrawal.BonusID, err = bonusesQueries.Insert(ctx, tx, withdrawal.UserID, -withdrawal.Sum, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)

@@ -23,16 +23,7 @@ func Create(manager managers.BaseBonusesManager, baseLogger logger.BaseLogger) S
 }
 
 func (s *Storage) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdrawal) error {
-	balanceDif, err := s.manager.GetBalanceDif(ctx, withdrawal.UserID)
-	if err != nil {
-		return fmt.Errorf("get userID '%d' bonuses balance: %w", withdrawal.UserID, err)
-	}
-
-	if balanceDif < withdrawal.Sum {
-		return fmt.Errorf("userID '%d' balance '%f' is not enough for withdrawn: %w", withdrawal.UserID, balanceDif, data.ErrNotEnoughBonuses)
-	}
-
-	if err = s.manager.WithdrawBonuses(ctx, withdrawal); err != nil {
+	if err := s.manager.WithdrawBonuses(ctx, withdrawal); err != nil {
 		return fmt.Errorf("withdraw userID '%d' bonuses: %w", withdrawal.UserID, err)
 	}
 
