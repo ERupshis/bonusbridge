@@ -55,35 +55,43 @@ func (c *Controller) requestCalculationsResult(ctx context.Context, chOut chan<-
 			close(chOut)
 			return
 		case <-ticker.C:
-			for _, status := range []string{"PROCESSING", "NEW"} {
-				orders, err := c.ordersStorage.GetOrders(ctx, map[string]interface{}{"status_id": data.GetOrderStatusID(status)})
-				if err != nil {
-					c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with PROCESSING status: %v", err)
-				} else {
-					for i := 0; i < len(orders); i++ {
-						respStatus, pause, err := c.client.RequestCalculationResult(ctx, c.accrualAddr, &orders[i])
-						if err != nil {
-							if errors.Is(err, context.Canceled) {
-								c.log.Info("[accrual:Controller:requestCalculationsResult] requests task is stopping: %v", err)
-								close(chOut)
-								return
-							}
+			c.processOrders(ctx, chOut)
+		}
+	}
+}
 
-							c.log.Info("[accrual:Controller:requestCalculationsResult] failed ('%d') to get calculation from loyalty system for order '%v': %v", respStatus, orders[i], err)
-							continue
-						}
+func (c *Controller) processOrders(ctx context.Context, chOut chan<- data.Order) {
+	for _, status := range []string{"PROCESSING", "NEW"} {
+		orders, err := c.ordersStorage.GetOrders(ctx, map[string]interface{}{"status_id": data.GetOrderStatusID(status)})
+		if err != nil {
+			c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with PROCESSING status: %v", err)
+			continue
+		}
 
-						if respStatus == http.StatusTooManyRequests && pause != 0 {
-							c.pauseRequest(ctx, pause)
-							i--
-						} else {
-							chOut <- orders[i]
-						}
-					}
+		for i := 0; i < len(orders); i++ {
+			respStatus, pause, err := c.client.RequestCalculationResult(ctx, c.accrualAddr, &orders[i])
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					c.log.Info("[accrual:Controller:requestCalculationsResult] requests task was interrupted: %v", err)
+					return
 				}
+
+				c.log.Info("[accrual:Controller:requestCalculationsResult] failed ('%d') to get calculation from loyalty system for order '%v': %v", respStatus, orders[i], err)
+				continue
+			}
+
+			if needPauseRequests(respStatus, pause) {
+				c.pauseRequest(ctx, pause)
+				i--
+			} else {
+				chOut <- orders[i]
 			}
 		}
 	}
+}
+
+func needPauseRequests(respStatus client.ResponseStatus, pause client.RetryInterval) bool {
+	return respStatus == http.StatusTooManyRequests && pause != 0
 }
 
 func (c *Controller) pauseRequest(ctx context.Context, interval client.RetryInterval) {
@@ -120,13 +128,6 @@ func (c *Controller) updateOrders(ctx context.Context, chIn <-chan data.Order) {
 					c.log.Info("[accrual:Controller:updateOrders] error occurred during order '%v' update in db: %v", order, err)
 				}
 			}
-
-			//if orderStatusID == data.StatusProcessed {
-			//	if err := c.bonusesStorage.AddBonuses(ctx, order.UserID, order.Accrual); err != nil {
-			//		c.log.Info("[accrual:Controller:updateOrders] error occurred during add bonuses for order '%v' in db: %v", order, err)
-			//	}
-			//}
-			//}
 		}
 	}
 }
