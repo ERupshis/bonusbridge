@@ -59,6 +59,7 @@ func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log
 			&order.Number,
 			&order.UserID,
 			&order.Status,
+			&order.BonusID,
 			&order.Accrual,
 			&order.UploadedAt,
 		)
@@ -90,6 +91,7 @@ func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]
 		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)+".num",
 		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)+".user_id",
 		dbOrdersData.GetTableFullName(dbOrdersData.StatusesTable)+".status",
+		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)+".bonus_id",
 		dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)+".count",
 		dbOrdersData.GetTableFullName(dbOrdersData.OrdersTable)+".uploaded_at",
 	).
