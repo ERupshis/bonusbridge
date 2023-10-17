@@ -17,13 +17,11 @@ import (
 
 const migrationsFolder = "file://db/migrations/"
 
-// Conn storageManager implementation for PostgreSQL. Consist of database.
 type Conn struct {
 	*sql.DB
 	log logger.BaseLogger
 }
 
-// CreateConnection creates manager implementation. Supports migrations and check connection to database.
 func CreateConnection(ctx context.Context, cfg config.Config, log logger.BaseLogger) (*Conn, error) {
 	log.Info("[dbconn:CreateConnection] open database with settings: '%s'", cfg.DatabaseDSN)
 	errMsg := "create db: %w"
@@ -60,7 +58,6 @@ func CreateConnection(ctx context.Context, cfg config.Config, log logger.BaseLog
 	return manager, nil
 }
 
-// CheckConnection checks connection to database.
 func (p *Conn) CheckConnection(ctx context.Context) (bool, error) {
 	exec := func(context context.Context) (int64, []byte, error) {
 		return 0, []byte{}, p.PingContext(context)
@@ -72,7 +69,6 @@ func (p *Conn) CheckConnection(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-// Close closes database.
 func (p *Conn) Close() error {
 	return p.DB.Close()
 }

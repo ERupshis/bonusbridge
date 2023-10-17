@@ -40,10 +40,6 @@ func easyjson794297d0DecodeGithubComErupshisBonusbridgeInternalAuthUsersData(in 
 			out.Login = string(in.String())
 		case "password":
 			out.Password = string(in.String())
-		case "ID":
-			out.ID = int64(in.Int64())
-		case "Role":
-			out.Role = int(in.Int())
 		default:
 			in.SkipRecursive()
 		}
@@ -67,16 +63,6 @@ func easyjson794297d0EncodeGithubComErupshisBonusbridgeInternalAuthUsersData(out
 		const prefix string = ",\"password\":"
 		out.RawString(prefix)
 		out.String(string(in.Password))
-	}
-	{
-		const prefix string = ",\"ID\":"
-		out.RawString(prefix)
-		out.Int64(int64(in.ID))
-	}
-	{
-		const prefix string = ",\"Role\":"
-		out.RawString(prefix)
-		out.Int(int(in.Role))
 	}
 	out.RawByte('}')
 }
