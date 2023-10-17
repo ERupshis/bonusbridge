@@ -32,7 +32,7 @@ func Insert(ctx context.Context, tx *sql.Tx, withdrawal *data.Withdrawal, log lo
 		_, err = stmt.ExecContext(
 			context,
 			withdrawal.UserID,
-			withdrawal.OrderID,
+			withdrawal.Order,
 			withdrawal.BonusID,
 			withdrawal.ProcessedAt,
 		)

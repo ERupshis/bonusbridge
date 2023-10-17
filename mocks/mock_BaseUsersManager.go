@@ -5,8 +5,10 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
+	data "github.com/erupshis/bonusbridge/internal/auth/users/data"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -34,10 +36,10 @@ func (m *MockBaseUsersManager) EXPECT() *MockBaseUsersManagerMockRecorder {
 }
 
 // AddUser mocks base method.
-func (m *MockBaseUsersManager) AddUser(arg0, arg1 string) (int, error) {
+func (m *MockBaseUsersManager) AddUser(arg0 context.Context, arg1 *data.User) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddUser", arg0, arg1)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -48,47 +50,47 @@ func (mr *MockBaseUsersManagerMockRecorder) AddUser(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUser", reflect.TypeOf((*MockBaseUsersManager)(nil).AddUser), arg0, arg1)
 }
 
-// GetUserId mocks base method.
-func (m *MockBaseUsersManager) GetUserId(arg0 string) (int, error) {
+// GetUser mocks base method.
+func (m *MockBaseUsersManager) GetUser(arg0 context.Context, arg1 string) (*data.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserID", arg0)
-	ret0, _ := ret[0].(int)
+	ret := m.ctrl.Call(m, "GetUser", arg0, arg1)
+	ret0, _ := ret[0].(*data.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserId indicates an expected call of GetUserId.
-func (mr *MockBaseUsersManagerMockRecorder) GetUserId(arg0 interface{}) *gomock.Call {
+// GetUser indicates an expected call of GetUser.
+func (mr *MockBaseUsersManagerMockRecorder) GetUser(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserID", reflect.TypeOf((*MockBaseUsersManager)(nil).GetUserId), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockBaseUsersManager)(nil).GetUser), arg0, arg1)
+}
+
+// GetUserID mocks base method.
+func (m *MockBaseUsersManager) GetUserID(arg0 context.Context, arg1 string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserID", arg0, arg1)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserID indicates an expected call of GetUserID.
+func (mr *MockBaseUsersManagerMockRecorder) GetUserID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserID", reflect.TypeOf((*MockBaseUsersManager)(nil).GetUserID), arg0, arg1)
 }
 
 // GetUserRole mocks base method.
-func (m *MockBaseUsersManager) GetUserRole(arg0 int) (int, error) {
+func (m *MockBaseUsersManager) GetUserRole(arg0 context.Context, arg1 int64) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserRole", arg0)
+	ret := m.ctrl.Call(m, "GetUserRole", arg0, arg1)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserRole indicates an expected call of GetUserRole.
-func (mr *MockBaseUsersManagerMockRecorder) GetUserRole(arg0 interface{}) *gomock.Call {
+func (mr *MockBaseUsersManagerMockRecorder) GetUserRole(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserRole", reflect.TypeOf((*MockBaseUsersManager)(nil).GetUserRole), arg0)
-}
-
-// ValidateUser mocks base method.
-func (m *MockBaseUsersManager) ValidateUser(arg0, arg1 string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateUser", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ValidateUser indicates an expected call of ValidateUser.
-func (mr *MockBaseUsersManagerMockRecorder) ValidateUser(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUser", reflect.TypeOf((*MockBaseUsersManager)(nil).ValidateUser), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserRole", reflect.TypeOf((*MockBaseUsersManager)(nil).GetUserRole), arg0, arg1)
 }
