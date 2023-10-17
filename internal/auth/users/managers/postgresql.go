@@ -103,7 +103,7 @@ func (p *manager) getUser(ctx context.Context, filters map[string]interface{}) (
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	if len(usersSelected) != 1 {
+	if len(usersSelected) > 1 {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, data.ErrUserNotFound
 	}
