@@ -40,7 +40,7 @@ func (p *manager) GetBalanceDif(ctx context.Context, userID int64) (float32, err
 		return -1.0, fmt.Errorf(errMsg, err)
 	}
 
-	bonusesDif, err := bonusesQueries.SelectDifByUserID(ctx, tx, userID, p.log)
+	bonusesDif, err := bonusesQueries.SelectSumByUserID(ctx, tx, bonusesQueries.SumTotal, userID, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return -1.0, fmt.Errorf(errMsg, err)
@@ -62,7 +62,14 @@ func (p *manager) GetBalance(ctx context.Context, income bool, userID int64) (fl
 		return -1.0, fmt.Errorf(errMsg, err)
 	}
 
-	bonusesIncome, err := bonusesQueries.SelectInOutSumByUserID(ctx, tx, income, userID, p.log)
+	var filter int
+	if income {
+		filter = bonusesQueries.SumIn
+	} else {
+		filter = bonusesQueries.SumOut
+	}
+
+	bonusesIncome, err := bonusesQueries.SelectSumByUserID(ctx, tx, filter, userID, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return -1.0, fmt.Errorf(errMsg, err)
@@ -84,7 +91,7 @@ func (p *manager) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 		return fmt.Errorf(errMsg, err)
 	}
 
-	bonusesDif, err := bonusesQueries.SelectDifByUserID(ctx, tx, withdrawal.UserID, p.log)
+	bonusesDif, err := bonusesQueries.SelectSumByUserID(ctx, tx, bonusesQueries.SumTotal, withdrawal.UserID, p.log)
 	if err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
