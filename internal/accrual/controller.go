@@ -15,7 +15,7 @@ import (
 )
 
 type Controller struct {
-	ordersStorage  ordersStorage.Storage
+	ordersStorage  ordersStorage.BaseOrdersStorage
 	bonusesStorage bonusesStorage.BaseBonusesStorage
 
 	client client.BaseClient
@@ -25,7 +25,7 @@ type Controller struct {
 	log logger.BaseLogger
 }
 
-func CreateController(ordersStorage ordersStorage.Storage, bonusesStorage bonusesStorage.BaseBonusesStorage, client client.BaseClient, cfg config.Config, baseLogger logger.BaseLogger) Controller {
+func CreateController(ordersStorage ordersStorage.BaseOrdersStorage, bonusesStorage bonusesStorage.BaseBonusesStorage, client client.BaseClient, cfg config.Config, baseLogger logger.BaseLogger) Controller {
 	return Controller{
 		ordersStorage:  ordersStorage,
 		bonusesStorage: bonusesStorage,

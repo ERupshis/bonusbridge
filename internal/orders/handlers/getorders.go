@@ -9,7 +9,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/orders/storage"
 )
 
-func GetOrdersHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFunc {
+func GetOrdersHandler(strg storage.BaseOrdersStorage, log logger.BaseLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.GetUserIDFromContext(r.Context())
 		if err != nil {

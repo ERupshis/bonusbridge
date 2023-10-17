@@ -40,6 +40,21 @@ func (p *manager) AddOrder(ctx context.Context, number string, userID int64) (in
 		return -1, fmt.Errorf(errMsg, err)
 	}
 
+	orders, err := ordersQueries.Select(ctx, tx, map[string]interface{}{"number": number}, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return -1, fmt.Errorf(errMsg, err)
+	}
+
+	if len(orders) != 0 {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		if orders[0].UserID == userID {
+			return int64(orders[0].ID), fmt.Errorf("add order in storage: %w", data.ErrOrderWasAddedBefore)
+		} else {
+			return int64(orders[0].ID), fmt.Errorf("add order in storage: %w", data.ErrOrderWasAddedByAnotherUser)
+		}
+	}
+
 	bonusID, err := bonusesQueries.Insert(ctx, tx, userID, 0, p.log)
 	if err != nil {
 		return -1, fmt.Errorf(errMsg, err)
@@ -100,34 +115,6 @@ func (p *manager) UpdateOrder(ctx context.Context, order *data.Order) error {
 	return nil
 }
 
-func (p *manager) GetOrder(ctx context.Context, number string) (*data.Order, error) {
-	p.log.Info("[orders:manager:GetOrder] start transaction for order number '%s'", number)
-	errMsg := "select order in db: %w"
-	tx, err := p.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
-	}
-
-	orders, err := ordersQueries.Select(ctx, tx, map[string]interface{}{"number": number}, p.log)
-	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
-		return nil, fmt.Errorf(errMsg, err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
-	}
-
-	p.log.Info("[orders:manager:GetOrder] transaction successful")
-	if len(orders) == 0 {
-		return nil, nil
-	} else if len(orders) > 1 {
-		return nil, fmt.Errorf(errMsg, fmt.Errorf("more than one order in db with number '%s'", number))
-	}
-
-	return &orders[0], nil
-}
 func (p *manager) GetOrders(ctx context.Context, filters map[string]interface{}) ([]data.Order, error) {
 	p.log.Info("[orders:manager:GetOrders] start transaction with filters '%v'", filters)
 	errMsg := "select orders in db: %w"

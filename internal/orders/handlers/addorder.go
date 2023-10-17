@@ -13,7 +13,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/orders/validator"
 )
 
-func AddOrderHandler(strg storage.Storage, log logger.BaseLogger) http.HandlerFunc {
+func AddOrderHandler(strg storage.BaseOrdersStorage, log logger.BaseLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentType := r.Header.Get("Content-Type")
 		if contentType != "text/plain" {
