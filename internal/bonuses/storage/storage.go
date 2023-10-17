@@ -15,8 +15,8 @@ type Storage struct {
 	log logger.BaseLogger
 }
 
-func Create(manager managers.BaseBonusesManager, baseLogger logger.BaseLogger) Storage {
-	return Storage{
+func Create(manager managers.BaseBonusesManager, baseLogger logger.BaseLogger) BaseBonusesStorage {
+	return &Storage{
 		manager: manager,
 		log:     baseLogger,
 	}
@@ -32,8 +32,8 @@ func (s *Storage) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 
 func (s *Storage) GetBalance(ctx context.Context, userID int64) (*data.Balance, error) {
 	var res data.Balance
-
 	var err error
+
 	res.Current, err = s.manager.GetBalanceDif(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get userID '%d' bonuses balance: %w", userID, err)

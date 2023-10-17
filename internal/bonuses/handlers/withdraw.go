@@ -15,7 +15,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/orders/validator"
 )
 
-func Withdraw(strg storage.Storage, log logger.BaseLogger) http.HandlerFunc {
+func Withdraw(strg storage.BaseBonusesStorage, log logger.BaseLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.GetUserIDFromContext(r.Context())
 		if err != nil {

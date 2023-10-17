@@ -8,12 +8,12 @@ import (
 )
 
 type Controller struct {
-	storage storage.Storage
+	storage storage.BaseBonusesStorage
 
 	log logger.BaseLogger
 }
 
-func CreateController(storage storage.Storage, baseLogger logger.BaseLogger) Controller {
+func CreateController(storage storage.BaseBonusesStorage, baseLogger logger.BaseLogger) Controller {
 	return Controller{
 		storage: storage,
 		log:     baseLogger,

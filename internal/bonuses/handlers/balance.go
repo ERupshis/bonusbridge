@@ -10,7 +10,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
 
-func Balance(storage storage.Storage, log logger.BaseLogger) http.HandlerFunc {
+func Balance(storage storage.BaseBonusesStorage, log logger.BaseLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.GetUserIDFromContext(r.Context())
 		if err != nil {
