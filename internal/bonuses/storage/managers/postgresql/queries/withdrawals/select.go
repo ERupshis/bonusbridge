@@ -93,6 +93,10 @@ func createSelectWithdrawalsStmt(ctx context.Context, tx *sql.Tx, filters map[st
 		JoinClause(bonusesJoin)
 
 	for key := range filters {
+		switch key {
+		case "user_id":
+			key = dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable) + ".user_id"
+		}
 		builder = builder.Where(sq.Eq{key: "?"})
 	}
 	psqlSelect, _, err := builder.ToSql()
