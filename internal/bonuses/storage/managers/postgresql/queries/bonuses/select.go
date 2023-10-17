@@ -76,7 +76,7 @@ func createSelectSumByUserIDStmt(ctx context.Context, tx *sql.Tx, filter int) (*
 	case SumOut:
 		builder = builder.Where(sq.LtOrEq{"count": 0})
 	default:
-		builder = builder.Where(sq.GtOrEq{"count": 0}).Where(sq.LtOrEq{"count": 0})
+		builder = builder.Where(sq.GtOrEq{"id": 0})
 	}
 
 	psqlSelect, _, err := builder.ToSql()
