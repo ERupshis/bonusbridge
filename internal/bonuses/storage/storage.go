@@ -43,7 +43,7 @@ func (s *Storage) GetBalance(ctx context.Context, userID int64) (*data.Balance, 
 	var res data.Balance
 
 	var err error
-	res.Current, err = s.manager.GetBalance(ctx, true, userID)
+	res.Current, err = s.manager.GetBalanceDif(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get userID '%d' bonuses balance: %w", userID, err)
 	}
