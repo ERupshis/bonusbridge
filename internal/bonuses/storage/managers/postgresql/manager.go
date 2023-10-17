@@ -12,6 +12,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/db"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
+	ordersQueries "github.com/erupshis/bonusbridge/internal/orders/storage/managers/postgresql/queries"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
@@ -89,6 +90,18 @@ func (p *manager) WithdrawBonuses(ctx context.Context, withdrawal *data.Withdraw
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return fmt.Errorf(errMsg, err)
 	}
+
+	orders, err := ordersQueries.Select(ctx, tx, map[string]interface{}{"num": withdrawal.Order}, p.log)
+	if err != nil {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf(errMsg, err)
+	}
+
+	if len(orders) != 1 {
+		helpers.ExecuteWithLogError(tx.Rollback, p.log)
+		return fmt.Errorf("incorrect count in result for select order by num")
+	}
+	withdrawal.OrderID = orders[0].Number
 
 	if err = withdrawalsQueries.Insert(ctx, tx, withdrawal, p.log); err != nil {
 		helpers.ExecuteWithLogError(tx.Rollback, p.log)
