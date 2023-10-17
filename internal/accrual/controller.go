@@ -114,13 +114,13 @@ func (c *Controller) updateOrders(ctx context.Context, chIn <-chan data.Order) {
 				return
 			}
 
-			//orderStatusID := data.GetOrderStatusID(order.Status)
-			//if orderStatusID > data.StatusProcessing {
-			if err := c.ordersStorage.UpdateOrder(ctx, &order); err != nil {
-				c.log.Info("[accrual:Controller:updateOrders] error occurred during order '%v' update in db: %v", order, err)
-				continue
+			orderStatusID := data.GetOrderStatusID(order.Status)
+			if orderStatusID > data.StatusProcessing {
+				if err := c.ordersStorage.UpdateOrder(ctx, &order); err != nil {
+					c.log.Info("[accrual:Controller:updateOrders] error occurred during order '%v' update in db: %v", order, err)
+				}
 			}
-			//
+
 			//if orderStatusID == data.StatusProcessed {
 			//	if err := c.bonusesStorage.AddBonuses(ctx, order.UserID, order.Accrual); err != nil {
 			//		c.log.Info("[accrual:Controller:updateOrders] error occurred during add bonuses for order '%v' in db: %v", order, err)

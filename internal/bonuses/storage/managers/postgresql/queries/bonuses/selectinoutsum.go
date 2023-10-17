@@ -51,7 +51,7 @@ func SelectInOutSumByUserID(ctx context.Context, tx *sql.Tx, in bool, userID int
 	}
 
 	defer helpers.ExecuteWithLogError(rows.Close, log)
-	var res float32
+	var res sql.NullFloat64
 	for rows.Next() {
 		err = rows.Scan(
 			&res,
@@ -61,7 +61,7 @@ func SelectInOutSumByUserID(ctx context.Context, tx *sql.Tx, in bool, userID int
 		}
 	}
 
-	return res, nil
+	return float32(res.Float64), nil
 }
 
 func createSelectInSumByUserIDStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
