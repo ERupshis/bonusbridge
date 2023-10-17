@@ -8,7 +8,6 @@ import (
 
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
 	"github.com/erupshis/bonusbridge/internal/auth/users/data"
-	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/mocks"
 	"github.com/golang/mock/gomock"
@@ -141,7 +140,9 @@ func TestAuthorizeUser(t *testing.T) {
 
 			resp, errResp := ts.Client().Do(req)
 			require.NoError(t, errResp)
-			defer helpers.ExecuteWithLogError(resp.Body.Close, log)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 		})

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/erupshis/bonusbridge/internal/auth/jwtgenerator"
-	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/mocks"
 	"github.com/golang/mock/gomock"
@@ -126,7 +125,9 @@ func TestRegister(t *testing.T) {
 
 			resp, errResp := ts.Client().Do(req)
 			require.NoError(t, errResp)
-			defer helpers.ExecuteWithLogError(resp.Body.Close, log)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			assert.Equal(t, tt.want.authorizationHeader, resp.Header.Get("Authorization") != "")
