@@ -21,6 +21,6 @@ type User struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 
-	ID   int64
-	Role int
+	ID   int64 `json:"-"`
+	Role int   `json:"-"`
 }
