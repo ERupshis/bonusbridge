@@ -43,11 +43,11 @@ func (p *Pool) CloseResultsChan() {
 func (p *Pool) createWorkers(count int) {
 	p.log.Info("[accrual:WorkersPool:createWorkers] start '%d' workers.", count)
 	for i := 0; i < count; i++ {
-		go p.worker()
+		go p.worker(i)
 	}
 }
 
-func (p *Pool) worker() {
+func (p *Pool) worker(seqNum int) {
 	//worker stops when jobs channel is closed.
 	for job := range p.jobs {
 		p.log.Info("[accrual:WorkersPool:worker] worker starts job from queue.")
@@ -64,4 +64,6 @@ func (p *Pool) worker() {
 			p.log.Info("[accrual:WorkersPool:worker] job failed order is nil.")
 		}
 	}
+
+	p.log.Info("[accrual:WorkersPool:worker] worker '%d' has been stopped.", seqNum)
 }
