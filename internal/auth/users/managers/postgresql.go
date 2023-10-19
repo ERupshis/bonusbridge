@@ -90,30 +90,19 @@ func (p *manager) GetUserRole(ctx context.Context, userID int64) (int, error) {
 }
 
 func (p *manager) getUser(ctx context.Context, filters map[string]interface{}) (*data.User, error) {
-	p.log.Info("[users:manager:getUser] start transaction with filters '%v'", filters)
+	p.log.Info("[users:manager:getUser] perform request with filters '%v'", filters)
 	errMsg := "get user: %w"
-	tx, err := p.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
-	}
 
-	usersSelected, err := users.Select(ctx, tx, filters, p.log)
+	usersSelected, err := users.Select(ctx, p.DB, filters, p.log)
 	if err != nil {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
 	if len(usersSelected) > 1 {
-		helpers.ExecuteWithLogError(tx.Rollback, p.log)
 		return nil, data.ErrUserNotFound
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
-	}
-
-	p.log.Info("[users:manager:getUser] transaction successful")
+	p.log.Info("[users:manager:getUser] request successful")
 
 	if len(usersSelected) == 0 {
 		return nil, nil
