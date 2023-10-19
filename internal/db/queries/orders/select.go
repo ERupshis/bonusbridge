@@ -7,6 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/erupshis/bonusbridge/internal/db"
+	"github.com/erupshis/bonusbridge/internal/db/queries"
 	dbBonusesData "github.com/erupshis/bonusbridge/internal/db/queries/bonuses"
 	"github.com/erupshis/bonusbridge/internal/helpers"
 	"github.com/erupshis/bonusbridge/internal/logger"
@@ -25,7 +26,11 @@ func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log
 	defer helpers.ExecuteWithLogError(stmt.Close, log)
 
 	var valuesToUpdate []interface{}
-	for _, val := range filters {
+	for key, val := range filters {
+		if key == queries.Custom {
+			continue
+		}
+
 		valuesToUpdate = append(valuesToUpdate, val)
 	}
 
@@ -99,7 +104,7 @@ func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]
 		JoinClause(bonusesJoin)
 
 	if len(filters) != 0 {
-		for key := range filters {
+		for key, val := range filters {
 			switch key {
 			case "id":
 				key = GetTableFullName(OrdersTable) + ".id"
@@ -115,6 +120,9 @@ func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]
 				key = dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable) + ".count"
 			case "uploaded_at":
 				key = GetTableFullName(OrdersTable) + ".uploaded_at"
+			case queries.Custom:
+				builder = builder.Where(val)
+				continue
 			}
 			builder = builder.Where(sq.Eq{key: "?"})
 		}

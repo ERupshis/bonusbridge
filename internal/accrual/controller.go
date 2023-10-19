@@ -11,6 +11,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/accrual/workerspool"
 	bonusesStorage "github.com/erupshis/bonusbridge/internal/bonuses/storage"
 	"github.com/erupshis/bonusbridge/internal/config"
+	"github.com/erupshis/bonusbridge/internal/db/queries"
 	"github.com/erupshis/bonusbridge/internal/logger"
 	"github.com/erupshis/bonusbridge/internal/orders/data"
 	ordersStorage "github.com/erupshis/bonusbridge/internal/orders/storage"
@@ -68,16 +69,14 @@ func (c *Controller) requestCalculationsResult(ctx context.Context, requestInter
 }
 
 func (c *Controller) processOrders(ctx context.Context, workersPool *workerspool.Pool) {
-	for _, status := range []string{"PROCESSING", "NEW"} {
-		orders, err := c.ordersStorage.GetOrders(ctx, map[string]interface{}{"status_id": data.GetOrderStatusID(status)})
-		if err != nil {
-			c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with PROCESSING status: %v", err)
-			return
-		}
+	orders, err := c.ordersStorage.GetOrders(ctx, map[string]interface{}{queries.Custom: fmt.Sprintf("orders.status_id <= %d", data.StatusInvalid)})
+	if err != nil {
+		c.log.Info("[accrual:Controller:requestCalculationsResult] failed to get orders with PROCESSING status: %v", err)
+		return
+	}
 
-		for i := 0; i < len(orders); i++ {
-			c.addJobForWorkers(ctx, workersPool, orders[i])
-		}
+	for i := 0; i < len(orders); i++ {
+		c.addJobForWorkers(ctx, workersPool, orders[i])
 	}
 }
 

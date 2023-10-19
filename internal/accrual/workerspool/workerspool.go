@@ -41,6 +41,7 @@ func (p *Pool) CloseResultsChan() {
 }
 
 func (p *Pool) createWorkers(count int) {
+	p.log.Info("[accrual:WorkersPool:createWorkers] start '%d' workers.", count)
 	for i := 0; i < count; i++ {
 		go p.worker()
 	}
