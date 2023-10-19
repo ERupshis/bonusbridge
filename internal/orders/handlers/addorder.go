@@ -13,11 +13,11 @@ import (
 	"github.com/erupshis/bonusbridge/internal/orders/validator"
 )
 
-func AddOrderHandler(strg storage.BaseOrdersStorage, log logger.BaseLogger) http.HandlerFunc {
+func AddOrder(strg storage.BaseOrdersStorage, log logger.BaseLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentType := r.Header.Get("Content-Type")
 		if contentType != "text/plain" {
-			log.Info("[orders:handlers:AddOrderHandler] wrong body content type: %s", contentType)
+			log.Info("[orders:handlers:AddOrder] wrong body content type: %s", contentType)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -25,7 +25,7 @@ func AddOrderHandler(strg storage.BaseOrdersStorage, log logger.BaseLogger) http
 		var reqBody bytes.Buffer
 		_, err := reqBody.ReadFrom(r.Body)
 		if err != nil {
-			log.Info("[orders:handlers:AddOrderHandler] failed to read request's body: %v", err)
+			log.Info("[orders:handlers:AddOrder] failed to read request's body: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -33,14 +33,14 @@ func AddOrderHandler(strg storage.BaseOrdersStorage, log logger.BaseLogger) http
 
 		orderNumber := reqBody.String()
 		if !validator.IsLuhnValid(orderNumber) {
-			log.Info("[orders:handlers:AddOrderHandler] order number didn't pass Luhn's algorithm check")
+			log.Info("[orders:handlers:AddOrder] order number didn't pass Luhn's algorithm check")
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
 
 		userID, err := auth.GetUserIDFromContext(r.Context())
 		if err != nil {
-			log.Info("[orders:handlers:AddOrderHandler] failed to extract userID: %v", err)
+			log.Info("[orders:handlers:AddOrder] failed to extract userID: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -48,23 +48,23 @@ func AddOrderHandler(strg storage.BaseOrdersStorage, log logger.BaseLogger) http
 		err = strg.AddOrder(r.Context(), orderNumber, userID)
 		if err != nil {
 			if errors.Is(err, data.ErrOrderWasAddedBefore) {
-				log.Info("[orders:handlers:AddOrderHandler] order '%s' has been already added by this user before", orderNumber)
+				log.Info("[orders:handlers:AddOrder] order '%s' has been already added by this user before", orderNumber)
 				w.WriteHeader(http.StatusOK)
 				return
 			}
 
 			if errors.Is(err, data.ErrOrderWasAddedByAnotherUser) {
-				log.Info("[orders:handlers:AddOrderHandler] order '%s' has been already added by another user before", orderNumber)
+				log.Info("[orders:handlers:AddOrder] order '%s' has been already added by another user before", orderNumber)
 				w.WriteHeader(http.StatusConflict)
 				return
 			}
 
-			log.Info("[orders:handlers:AddOrderHandler] unknown error: %v", err)
+			log.Info("[orders:handlers:AddOrder] unknown error: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		log.Info("[orders:handlers:AddOrderHandler] order '%s' has been added in system. userID '%d'", orderNumber, userID)
+		log.Info("[orders:handlers:AddOrder] order '%s' has been added in system. userID '%d'", orderNumber, userID)
 		w.WriteHeader(http.StatusAccepted)
 	}
 }
