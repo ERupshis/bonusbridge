@@ -14,10 +14,10 @@ import (
 )
 
 // Select performs direct query request to database to select users satisfying filters.
-func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.User, error) {
+func Select(ctx context.Context, dbConn *sql.DB, filters map[string]interface{}, log logger.BaseLogger) ([]data.User, error) {
 	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, GetTableFullName(UsersTable)) + ": %w"
 
-	stmt, err := createSelectUsersStmt(ctx, tx, filters)
+	stmt, err := createSelectUsersStmt(ctx, dbConn, filters)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
@@ -69,7 +69,7 @@ func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log
 }
 
 // createSelectUsersStmt generates statement for select query.
-func createSelectUsersStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) (*sql.Stmt, error) {
+func createSelectUsersStmt(ctx context.Context, dbConn *sql.DB, filters map[string]interface{}) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	builder := psql.Select(
@@ -89,5 +89,5 @@ func createSelectUsersStmt(ctx context.Context, tx *sql.Tx, filters map[string]i
 	if err != nil {
 		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", GetTableFullName(UsersTable), err)
 	}
-	return tx.PrepareContext(ctx, psqlSelect)
+	return dbConn.PrepareContext(ctx, psqlSelect)
 }
