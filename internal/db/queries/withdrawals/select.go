@@ -18,7 +18,7 @@ import (
 func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log logger.BaseLogger) ([]data.Withdrawal, error) {
 	errMsg := fmt.Sprintf("select withdrawals with filter '%v' in '%s'",
 		filters,
-		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable),
+		dbBonusesData.WithdrawalsTable,
 	) + ": %w"
 
 	stmt, err := createSelectWithdrawalsStmt(ctx, tx, filters)
@@ -78,31 +78,31 @@ func createSelectWithdrawalsStmt(ctx context.Context, tx *sql.Tx, filters map[st
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	bonusesJoin := fmt.Sprintf("LEFT JOIN %s ON %[1]s.id = %s.bonus_id",
-		dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable),
-		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable),
+		dbBonusesData.BonusesTable,
+		dbBonusesData.WithdrawalsTable,
 	)
 
 	builder := psql.Select(
-		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)+".id",
-		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)+".user_id",
-		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)+".order_num",
-		fmt.Sprintf("ABS(%s) AS sum", dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)+".count"),
-		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)+".processed_at",
+		dbBonusesData.WithdrawalsTable+".id",
+		dbBonusesData.WithdrawalsTable+".user_id",
+		dbBonusesData.WithdrawalsTable+".order_num",
+		fmt.Sprintf("ABS(%s) AS sum", dbBonusesData.BonusesTable+".count"),
+		dbBonusesData.WithdrawalsTable+".processed_at",
 	).
-		From(dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)).
+		From(dbBonusesData.WithdrawalsTable).
 		JoinClause(bonusesJoin)
 
 	for key := range filters {
 		switch key {
 		case "user_id":
-			key = dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable) + ".user_id"
+			key = dbBonusesData.WithdrawalsTable + ".user_id"
 		}
 		builder = builder.Where(sq.Eq{key: "?"})
 	}
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable), err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", dbBonusesData.WithdrawalsTable, err)
 	}
 	return tx.PrepareContext(ctx, psqlSelect)
 }

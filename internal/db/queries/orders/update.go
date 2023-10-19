@@ -14,7 +14,7 @@ import (
 
 // UpdateByID performs direct query request to database to edit existing order's record.
 func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]interface{}, log logger.BaseLogger) error {
-	errMsg := fmt.Sprintf("update partially order by id '%d' with data '%v' in '%s'", id, values, GetTableFullName(OrdersTable)) + ": %w"
+	errMsg := fmt.Sprintf("update partially order by id '%d' with data '%v' in '%s'", id, values, OrdersTable) + ": %w"
 
 	var columnsToUpdate []string
 	var valuesToUpdate []interface{}
@@ -55,7 +55,7 @@ func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 func createUpdateOrderByIDStmt(ctx context.Context, tx *sql.Tx, values []string) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	builder := psql.Update(GetTableFullName(OrdersTable))
+	builder := psql.Update(OrdersTable)
 	for _, col := range values {
 		builder = builder.Set(col, "?")
 	}
@@ -63,7 +63,7 @@ func createUpdateOrderByIDStmt(ctx context.Context, tx *sql.Tx, values []string)
 	psqlUpdate, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql update statement for '%s': %w", GetTableFullName(OrdersTable), err)
+		return nil, fmt.Errorf("squirrel sql update statement for '%s': %w", OrdersTable, err)
 
 	}
 	return tx.PrepareContext(ctx, psqlUpdate)

@@ -81,25 +81,19 @@ func Select(ctx context.Context, tx *sql.Tx, filters map[string]interface{}, log
 func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]interface{}) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	statusesJoin := fmt.Sprintf("RIGHT JOIN %s ON %[1]s.id = %s.status_id",
-		GetTableFullName(StatusesTable),
-		GetTableFullName(OrdersTable),
-	)
-	bonusesJoin := fmt.Sprintf("RIGHT JOIN %s ON %[1]s.id = %s.bonus_id",
-		dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable),
-		GetTableFullName(OrdersTable),
-	)
+	statusesJoin := fmt.Sprintf("RIGHT JOIN %s ON %[1]s.id = %s.status_id", StatusesTable, OrdersTable)
+	bonusesJoin := fmt.Sprintf("RIGHT JOIN %s ON %[1]s.id = %s.bonus_id", dbBonusesData.BonusesTable, OrdersTable)
 
 	builder := psql.Select(
-		GetTableFullName(OrdersTable)+".id",
-		GetTableFullName(OrdersTable)+".num",
-		GetTableFullName(OrdersTable)+".user_id",
-		GetTableFullName(StatusesTable)+".status",
-		GetTableFullName(OrdersTable)+".bonus_id",
-		dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable)+".count",
-		GetTableFullName(OrdersTable)+".uploaded_at",
+		OrdersTable+".id",
+		OrdersTable+".num",
+		OrdersTable+".user_id",
+		StatusesTable+".status",
+		OrdersTable+".bonus_id",
+		dbBonusesData.BonusesTable+".count",
+		OrdersTable+".uploaded_at",
 	).
-		From(GetTableFullName(OrdersTable)).
+		From(OrdersTable).
 		JoinClause(statusesJoin).
 		JoinClause(bonusesJoin)
 
@@ -107,19 +101,19 @@ func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]
 		for key, val := range filters {
 			switch key {
 			case "id":
-				key = GetTableFullName(OrdersTable) + ".id"
+				key = OrdersTable + ".id"
 			case "number":
-				key = GetTableFullName(OrdersTable) + ".num"
+				key = OrdersTable + ".num"
 			case "user_id":
-				key = GetTableFullName(OrdersTable) + ".user_id"
+				key = OrdersTable + ".user_id"
 			case "status_id":
-				key = GetTableFullName(OrdersTable) + ".status_id"
+				key = OrdersTable + ".status_id"
 			case "status":
-				key = GetTableFullName(StatusesTable) + ".status"
+				key = StatusesTable + ".status"
 			case "accrual":
-				key = dbBonusesData.GetTableFullName(dbBonusesData.BonusesTable) + ".count"
+				key = dbBonusesData.BonusesTable + ".count"
 			case "uploaded_at":
-				key = GetTableFullName(OrdersTable) + ".uploaded_at"
+				key = OrdersTable + ".uploaded_at"
 			case queries.Custom:
 				builder = builder.Where(val)
 				continue
@@ -130,7 +124,7 @@ func createSelectOrdersStmt(ctx context.Context, tx *sql.Tx, filters map[string]
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", GetTableFullName(OrdersTable), err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", OrdersTable, err)
 	}
 	return tx.PrepareContext(ctx, psqlSelect)
 }

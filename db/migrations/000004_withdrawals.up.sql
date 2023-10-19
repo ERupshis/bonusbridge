@@ -1,8 +1,8 @@
-CREATE TABLE IF NOT EXISTS bonuses.withdrawals
+CREATE TABLE IF NOT EXISTS withdrawals
 (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users.users(id) NOT NULL,
+    user_id INTEGER REFERENCES users(id) NOT NULL,
     order_num NUMERIC NOT NULL UNIQUE,
-    bonus_id INTEGER UNIQUE REFERENCES bonuses.bonuses(id) NOT NULL,
+    bonus_id INTEGER UNIQUE REFERENCES bonuses(id) NOT NULL,
     processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

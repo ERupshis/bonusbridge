@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS bonuses.withdrawals CASCADE;
+DROP TABLE IF EXISTS withdrawals CASCADE;

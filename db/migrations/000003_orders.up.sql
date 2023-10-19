@@ -1,14 +1,11 @@
---ORDERS
-CREATE SCHEMA IF NOT EXISTS orders;
-
 --ORDERS STATUS
-CREATE TABLE IF NOT EXISTS orders.statuses
+CREATE TABLE IF NOT EXISTS statuses
 (
     id SMALLSERIAL PRIMARY KEY,
     status VARCHAR(15) NOT NULL UNIQUE
 );
 
-INSERT INTO orders.statuses(status)
+INSERT INTO statuses(status)
 VALUES ('NEW'),
        ('PROCESSING'),
        ('INVALID'),
@@ -16,12 +13,12 @@ VALUES ('NEW'),
        ('UNDEFINED');
 
 --ORDERS ITSELF
-CREATE TABLE IF NOT EXISTS orders.orders
+CREATE TABLE IF NOT EXISTS orders
 (
     id SERIAL PRIMARY KEY,
     num NUMERIC NOT NULL UNIQUE,
-    status_id SMALLINT REFERENCES orders.statuses(id) NOT NULL,
-    user_id INTEGER REFERENCES users.users(id) NOT NULL,
-    bonus_id INTEGER UNIQUE REFERENCES bonuses.bonuses(id) NOT NULL,
+    status_id SMALLINT REFERENCES statuses(id) NOT NULL,
+    user_id INTEGER REFERENCES users(id) NOT NULL,
+    bonus_id INTEGER UNIQUE REFERENCES bonuses(id) NOT NULL,
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -48,14 +48,14 @@ func Insert(ctx context.Context, tx *sql.Tx, orderData *data.Order, log logger.B
 func createInsertOrderStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	psqlInsert, _, err := psql.Insert(GetTableFullName(OrdersTable)).
+	psqlInsert, _, err := psql.Insert(OrdersTable).
 		Columns(ColumnsInOrdersTable...).
 		Values(make([]interface{}, len(ColumnsInOrdersTable))...).
 		Suffix("RETURNING id").
 		ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", GetTableFullName(OrdersTable), err)
+		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", OrdersTable, err)
 	}
 	return tx.PrepareContext(ctx, psqlInsert)
 }

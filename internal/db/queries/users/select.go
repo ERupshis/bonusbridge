@@ -15,7 +15,7 @@ import (
 
 // Select performs direct query request to database to select users satisfying filters.
 func Select(ctx context.Context, dbConn *sql.DB, filters map[string]interface{}, log logger.BaseLogger) ([]data.User, error) {
-	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, GetTableFullName(UsersTable)) + ": %w"
+	errMsg := fmt.Sprintf("select orders with filter '%v' in '%s'", filters, UsersTable) + ": %w"
 
 	stmt, err := createSelectUsersStmt(ctx, dbConn, filters)
 	if err != nil {
@@ -78,7 +78,7 @@ func createSelectUsersStmt(ctx context.Context, dbConn *sql.DB, filters map[stri
 		"password",
 		"role_id",
 	).
-		From(GetTableFullName(UsersTable))
+		From(UsersTable)
 	if len(filters) != 0 {
 		for key := range filters {
 			builder = builder.Where(sq.Eq{key: "?"})
@@ -87,7 +87,7 @@ func createSelectUsersStmt(ctx context.Context, dbConn *sql.DB, filters map[stri
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", GetTableFullName(UsersTable), err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", UsersTable, err)
 	}
 	return dbConn.PrepareContext(ctx, psqlSelect)
 }

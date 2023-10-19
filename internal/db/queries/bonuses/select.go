@@ -19,7 +19,7 @@ const (
 )
 
 func SelectSumByUserID(ctx context.Context, tx *sql.Tx, filter int, userID int64, log logger.BaseLogger) (float32, error) {
-	errMsg := fmt.Sprintf("select bonuses balance for userID '%d' in '%s'", userID, GetTableFullName(BonusesTable)) + ": %w"
+	errMsg := fmt.Sprintf("select bonuses balance for userID '%d' in '%s'", userID, BonusesTable) + ": %w"
 
 	stmt, err := createSelectSumByUserIDStmt(ctx, tx, filter)
 	if err != nil {
@@ -66,7 +66,7 @@ func createSelectSumByUserIDStmt(ctx context.Context, tx *sql.Tx, filter int) (*
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	builder := psql.Select("SUM(count)").
-		From(GetTableFullName(BonusesTable)).
+		From(BonusesTable).
 		Where(sq.Eq{"user_id": 0})
 
 	switch filter {
@@ -81,7 +81,7 @@ func createSelectSumByUserIDStmt(ctx context.Context, tx *sql.Tx, filter int) (*
 	psqlSelect, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", GetTableFullName(BonusesTable), err)
+		return nil, fmt.Errorf("squirrel sql select statement for '%s': %w", BonusesTable, err)
 	}
 	return tx.PrepareContext(ctx, psqlSelect)
 }

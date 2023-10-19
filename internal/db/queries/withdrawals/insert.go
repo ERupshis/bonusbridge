@@ -19,7 +19,7 @@ func Insert(ctx context.Context, tx *sql.Tx, withdrawal *data.Withdrawal, log lo
 	errMsg := fmt.Sprintf("insert withdrawal '%f' for userID '%d' in '%s'",
 		withdrawal.Sum,
 		withdrawal.UserID,
-		dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable),
+		dbBonusesData.WithdrawalsTable,
 	) + ": %w"
 
 	stmt, err := createInsertWithdrawalStmt(ctx, tx)
@@ -51,13 +51,13 @@ func Insert(ctx context.Context, tx *sql.Tx, withdrawal *data.Withdrawal, log lo
 func createInsertWithdrawalStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	psqlInsert, _, err := psql.Insert(dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable)).
+	psqlInsert, _, err := psql.Insert(dbBonusesData.WithdrawalsTable).
 		Columns(dbBonusesData.ColumnsInWithdrawalsTable...).
 		Values(make([]interface{}, len(dbBonusesData.ColumnsInWithdrawalsTable))...).
 		ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", dbBonusesData.GetTableFullName(dbBonusesData.WithdrawalsTable), err)
+		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", dbBonusesData.WithdrawalsTable, err)
 	}
 	return tx.PrepareContext(ctx, psqlInsert)
 }

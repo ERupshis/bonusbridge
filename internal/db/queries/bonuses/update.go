@@ -14,7 +14,7 @@ import (
 
 // UpdateByID performs direct query request to database to edit existing bonuses record.
 func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]interface{}, log logger.BaseLogger) error {
-	errMsg := fmt.Sprintf("update partially bonus by id '%d' with data '%v' in '%s'", id, values, GetTableFullName(BonusesTable)) + ": %w"
+	errMsg := fmt.Sprintf("update partially bonus by id '%d' with data '%v' in '%s'", id, values, BonusesTable) + ": %w"
 
 	var columnsToUpdate []string
 	var valuesToUpdate []interface{}
@@ -55,7 +55,7 @@ func UpdateByID(ctx context.Context, tx *sql.Tx, id int64, values map[string]int
 func createUpdateByIDStmt(ctx context.Context, tx *sql.Tx, values []string) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	builder := psql.Update(GetTableFullName(BonusesTable))
+	builder := psql.Update(BonusesTable)
 	for _, col := range values {
 		builder = builder.Set(col, "?")
 	}
@@ -63,7 +63,7 @@ func createUpdateByIDStmt(ctx context.Context, tx *sql.Tx, values []string) (*sq
 	psqlUpdate, _, err := builder.ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql update statement for '%s': %w", GetTableFullName(BonusesTable), err)
+		return nil, fmt.Errorf("squirrel sql update statement for '%s': %w", BonusesTable, err)
 
 	}
 	return tx.PrepareContext(ctx, psqlUpdate)

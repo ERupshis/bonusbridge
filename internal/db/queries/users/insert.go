@@ -15,7 +15,7 @@ import (
 
 // Insert performs direct query request to database to add new user.
 func Insert(ctx context.Context, tx *sql.Tx, userData *data.User, log logger.BaseLogger) error {
-	errMsg := fmt.Sprintf("insert user '%v' in '%s'", *userData, GetTableFullName(UsersTable)) + ": %w"
+	errMsg := fmt.Sprintf("insert user '%v' in '%s'", *userData, UsersTable) + ": %w"
 
 	stmt, err := createInsertUserStmt(ctx, tx)
 	if err != nil {
@@ -45,13 +45,13 @@ func Insert(ctx context.Context, tx *sql.Tx, userData *data.User, log logger.Bas
 func createInsertUserStmt(ctx context.Context, tx *sql.Tx) (*sql.Stmt, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	psqlInsert, _, err := psql.Insert(GetTableFullName(UsersTable)).
+	psqlInsert, _, err := psql.Insert(UsersTable).
 		Columns(ColumnsInUsersTable...).
 		Values(make([]interface{}, len(ColumnsInUsersTable))...).
 		ToSql()
 
 	if err != nil {
-		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", GetTableFullName(UsersTable), err)
+		return nil, fmt.Errorf("squirrel sql insert statement for '%s': %w", UsersTable, err)
 	}
 	return tx.PrepareContext(ctx, psqlInsert)
 }

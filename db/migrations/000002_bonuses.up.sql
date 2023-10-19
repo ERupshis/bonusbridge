@@ -1,10 +1,7 @@
---BONUSES
-CREATE SCHEMA IF NOT EXISTS bonuses;
-
 --BALANCES
-CREATE TABLE IF NOT EXISTS bonuses.bonuses
+CREATE TABLE IF NOT EXISTS bonuses
 (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users.users(id) NOT NULL,
+    user_id INTEGER REFERENCES users(id) NOT NULL,
     count NUMERIC(9,2) DEFAULT 0
 );
