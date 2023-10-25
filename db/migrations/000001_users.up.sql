@@ -2,10 +2,10 @@
 CREATE TABLE IF NOT EXISTS roles
 (
     id   SMALLSERIAL PRIMARY KEY,
-    role_id VARCHAR(10) NOT NULL UNIQUE
+    value VARCHAR(10) NOT NULL UNIQUE
 );
 
-INSERT INTO roles(role_id)
+INSERT INTO roles(value)
 VALUES ('USER'),
        ('ADMIN');
 
