@@ -38,6 +38,11 @@ func (c *Controller) RouteLoginer() *chi.Mux {
 	return r
 }
 
-func (c *Controller) AuthorizeUser(h http.Handler, userRoleRequirement int) http.Handler {
-	return middleware.AuthorizeUser(h, userRoleRequirement, c.usersStrg, c.jwt, c.log)
+func (c *Controller) AuthorizeUser(userRoleRequirement int) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authorizedHandler := middleware.AuthorizeUser(next, userRoleRequirement, c.usersStrg, c.jwt, c.log)
+			authorizedHandler.ServeHTTP(w, r)
+		})
+	}
 }

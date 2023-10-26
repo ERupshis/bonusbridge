@@ -1,19 +1,16 @@
---USERS
-CREATE SCHEMA IF NOT EXISTS users;
-
 --ROLES IMPLEMENTATION
-CREATE TABLE IF NOT EXISTS users.roles
+CREATE TABLE IF NOT EXISTS roles
 (
     id   SMALLSERIAL PRIMARY KEY,
-    role_id VARCHAR(10) NOT NULL UNIQUE
+    value VARCHAR(10) NOT NULL UNIQUE
 );
 
-INSERT INTO users.roles(role_id)
+INSERT INTO roles(value)
 VALUES ('USER'),
        ('ADMIN');
 
 --USERS IMPLEMENTATION
-CREATE TABLE IF NOT EXISTS users.users
+CREATE TABLE IF NOT EXISTS users
 (
     id   SERIAL PRIMARY KEY,
     login VARCHAR(255) NOT NULL UNIQUE,
@@ -21,5 +18,5 @@ CREATE TABLE IF NOT EXISTS users.users
     role_id SMALLINT NOT NULL
 );
 
-INSERT INTO users.users(login, password, role_id)
+INSERT INTO users(login, password, role_id)
 VALUES ('u1', 'p1', 1);

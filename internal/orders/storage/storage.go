@@ -15,33 +15,20 @@ type Storage struct {
 	log logger.BaseLogger
 }
 
-func Create(manager managers.BaseOrdersManager, baseLogger logger.BaseLogger) Storage {
-	return Storage{
+func Create(manager managers.BaseOrdersManager, baseLogger logger.BaseLogger) BaseOrdersStorage {
+	return &Storage{
 		manager: manager,
 		log:     baseLogger,
 	}
 }
 
 func (s *Storage) AddOrder(ctx context.Context, number string, userID int64) error {
-	order, err := s.manager.GetOrder(ctx, number)
+	_, err := s.manager.AddOrder(ctx, number, userID)
 	if err != nil {
-		return fmt.Errorf("get order from storage: %w", err)
+		return fmt.Errorf("add new order in storage: %w", err)
 	}
 
-	if order == nil {
-		_, err = s.manager.AddOrder(ctx, number, userID)
-		if err != nil {
-			return fmt.Errorf("add new order in storage: %w", err)
-		}
-
-		return nil
-	} else {
-		if order.UserID == userID {
-			return fmt.Errorf("add order in storage: %w", data.ErrOrderWasAddedBefore)
-		} else {
-			return fmt.Errorf("add order in storage: %w", data.ErrOrderWasAddedByAnotherUser)
-		}
-	}
+	return nil
 }
 
 func (s *Storage) UpdateOrder(ctx context.Context, order *data.Order) error {

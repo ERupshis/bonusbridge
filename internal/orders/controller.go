@@ -8,12 +8,12 @@ import (
 )
 
 type Controller struct {
-	storage storage.Storage
+	storage storage.BaseOrdersStorage
 
 	log logger.BaseLogger
 }
 
-func CreateController(storage storage.Storage, baseLogger logger.BaseLogger) Controller {
+func CreateController(storage storage.BaseOrdersStorage, baseLogger logger.BaseLogger) Controller {
 	return Controller{
 		storage: storage,
 		log:     baseLogger,
@@ -22,7 +22,7 @@ func CreateController(storage storage.Storage, baseLogger logger.BaseLogger) Con
 
 func (c *Controller) Route() *chi.Mux {
 	r := chi.NewRouter()
-	r.Post("/", handlers.AddOrderHandler(c.storage, c.log))
-	r.Get("/", handlers.GetOrdersHandler(c.storage, c.log))
+	r.Post("/", handlers.AddOrder(c.storage, c.log))
+	r.Get("/", handlers.GetOrders(c.storage, c.log))
 	return r
 }

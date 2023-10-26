@@ -1,0 +1,7 @@
+--BALANCES
+CREATE TABLE IF NOT EXISTS bonuses
+(
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) NOT NULL,
+    count NUMERIC(9,2) DEFAULT 0
+);

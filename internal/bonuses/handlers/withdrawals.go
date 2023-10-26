@@ -12,7 +12,7 @@ import (
 	"github.com/erupshis/bonusbridge/internal/logger"
 )
 
-func Withdrawals(strg storage.Storage, log logger.BaseLogger) http.HandlerFunc {
+func Withdrawals(strg storage.BaseBonusesStorage, log logger.BaseLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.GetUserIDFromContext(r.Context())
 		if err != nil {

@@ -14,6 +14,7 @@ type Config struct {
 	DatabaseDSN string // DatabaseDSN PostgreSQL data source name.
 	HostAddr    string // Host server's address.
 	JWTKey      string // jwt web token generation key.
+	LogLevel    string // log level.
 }
 
 // Parse main func to parse variables.
@@ -32,6 +33,7 @@ const (
 	flagDatabaseDSN    = "d"
 	flagAccrualAddress = "r"
 	flagJWTKey         = "j"
+	flagLogLevel       = "l"
 )
 
 // checkFlags checks flags of app's launch.
@@ -48,6 +50,9 @@ func checkFlags(config *Config) {
 	// accrual.
 	flag.StringVar(&config.JWTKey, flagJWTKey, "need TO REMOVE", "JWT web token key")
 
+	// log.
+	flag.StringVar(&config.LogLevel, flagLogLevel, "info", "log level")
+
 	flag.Parse()
 }
 
@@ -58,6 +63,7 @@ type envConfig struct {
 	DatabaseDSN string `env:"DATABASE_URI"`
 	HostAddr    string `env:"RUN_ADDRESS"`
 	JWTKey      string `env:"JWT_KEY"`
+	LogLevel    string `env:"LOG_LEVEL"`
 }
 
 // checkEnvironments checks environments suitable for server.
@@ -79,4 +85,7 @@ func checkEnvironments(config *Config) {
 
 	//authentication.
 	_ = SetEnvToParamIfNeed(&config.JWTKey, envs.JWTKey)
+
+	//log level.
+	_ = SetEnvToParamIfNeed(&config.LogLevel, envs.LogLevel)
 }
