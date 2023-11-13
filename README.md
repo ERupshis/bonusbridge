@@ -10,4 +10,4 @@ verifying the received order numbers through the loyalty points calculation syst
 crediting the user's loyalty account with the appropriate reward for each valid order number.
 
 ## Task:
-https://github.com/yandex-praktikum/go-musthave-diploma-tpl/blob/master/SPECIFICATION.md
+[https://github.com/yandex-praktikum/go-musthave-diploma-tpl/blob/master/SPECIFICATION.md](https://github.com/ERupshis/bonusbridge/blob/master/SPECIFICATION.md)https://github.com/ERupshis/bonusbridge/blob/master/SPECIFICATION.md
